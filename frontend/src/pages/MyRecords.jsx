@@ -88,14 +88,14 @@ const MedicalRecords = () => {
         <h1 className="text-3xl font-bold text-gray-800">Medical Records</h1>
         <p className="text-gray-500 text-lg">View and download your medical records</p>
       </div>
-
+        
       <hr className="my-8 border-gray-200" />
 
       {/* Records Grid */}
       {records.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {records.map((record) => (
-            <div 
+          <div 
               key={record._id}
               className="p-6 border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
             >
@@ -231,7 +231,7 @@ const MedicalRecords = () => {
               )}
             </div>
           </div>
-        </div>
+      </div>
       )}
     </div>
   );

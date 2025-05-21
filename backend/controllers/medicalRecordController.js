@@ -63,22 +63,25 @@ export const saveMedicalRecord = async (req, res) => {
     if (req.file) {
       try {
         console.log('Uploading file to Cloudinary...');
-        const result = await cloudinary.uploader.upload(req.file.path, {
-          folder: 'medical_records',
-          resource_type: 'auto'
+        const result = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream({
+            folder: 'medical_records',
+            resource_type: 'auto'
+          }, (error, result) => {
+            if (error) {
+              console.error('Cloudinary upload error:', error);
+              reject(error);
+            } else {
+              console.log('Cloudinary upload successful:', result);
+              resolve(result);
+            }
+          });
+          uploadStream.end(req.file.buffer);
         });
-        console.log('File uploaded successfully:', result);
         fileUrl = result.secure_url;
-
-        // Delete the temporary file after upload
-        fs.unlinkSync(req.file.path);
-        console.log('Temporary file deleted');
+        console.log('File uploaded successfully:', fileUrl);
       } catch (uploadError) {
         console.error('Error uploading file to Cloudinary:', uploadError);
-        // Delete the temporary file if it exists
-        if (req.file.path && fs.existsSync(req.file.path)) {
-          fs.unlinkSync(req.file.path);
-        }
         return res.status(500).json({ message: 'Error uploading file' });
       }
     } else {
@@ -111,10 +114,6 @@ export const saveMedicalRecord = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in saveMedicalRecord:', error);
-    // Delete the temporary file if it exists
-    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
     res.status(500).json({ message: error.message });
   }
 };
