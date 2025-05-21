@@ -311,23 +311,52 @@ const appointmentComplete = async (req, res) =>{
     try{
 
         const {docId, appointmentId } = req.body
-        const appointmentData = await appointmentModel.findById(appointmentId)
+        const appointmentData = await appointmentModel.findById(appointmentId).populate('user').populate('doctor'); // Populate to get user/doctor names for notification
 
-        if(appointmentData && appointmentData.docId === docId) {
+        if(appointmentData && appointmentData.doctor.toString() === docId) { // Use .doctor and compare as strings
 
-            const paid = await appointmentModel.findByIdAndUpdate(
+            const updatedAppointment = await appointmentModel.findByIdAndUpdate(
               appointmentId,
-              { status: 'Paid' },
+              { status: 'Completed', isCompleted: true }, // Set status to Completed and isCompleted to true
               { new: true }
             );
-            return res.json({ success:true, appointment: paid, message: 'Appointment marked as Paid' });
+
+            // --- Notification logic ---
+            const Notification = (await import('../models/notificationModel.js')).default;
+
+            // Notify admin
+            await Notification.create({
+              recipientType: 'admin',
+              recipient: 'admin', // Assuming a fixed recipient identifier for admin
+              type: 'appointment_complete',
+              content: `Appointment completed by Dr. ${appointmentData.doctor?.name || ''} with ${appointmentData.user?.name || 'user'} on ${appointmentData.slotDate} at ${appointmentData.slotTime}`,
+              sender: docId,
+              senderType: 'doctor',
+              link: `/admin/appointments/${appointmentId}` // Link to admin appointment view
+            });
+
+             // Notify user
+            if (appointmentData.user?._id) {
+              await Notification.create({
+                recipient: appointmentData.user._id,
+                recipientType: 'user',
+                sender: docId,
+                senderType: 'doctor',
+                type: 'appointment_complete',
+                content: `Your appointment with Dr. ${appointmentData.doctor?.name || ''} on ${appointmentData.slotDate} at ${appointmentData.slotTime} has been marked as completed.`,
+                link: `/appointments/${appointmentId}`
+              });
+            }
+            // --- End notification logic ---
+
+            return res.json({ success:true, appointment: updatedAppointment, message: 'Appointment marked as Completed' }); // Updated message
 
         } else{
-            return res.json({success:false,message:'Marked failed'})
+            return res.json({success:false,message:'Marked failed: Appointment not found or does not belong to this doctor'})
         }
     }catch (error){
         console.log(error)
-        return res.json({success:false,message:error.message})
+        return res.status(500).json({success:false,message:error.message})
     }
 }
 

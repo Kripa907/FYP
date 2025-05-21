@@ -246,6 +246,17 @@ const bookAppointment = async (req, res) => {
       link: `/appointments/${appointment._id}` // Add link to the appointment
     });
 
+    // Create notification for admin
+    await Notification.create({
+      recipientType: 'admin',
+      recipient: 'admin', // Assuming a fixed recipient identifier for admin
+      type: 'appointment',
+      content: `New appointment booked by ${user.name} with Dr. ${doctor.name} for ${slotDate} at ${slotTime}`,
+      sender: userId,
+      senderType: 'user',
+      link: `/admin/appointments/${appointment._id}` // Link to admin appointment view
+    });
+
     res.status(201).json({
       success: true,
       message: 'Appointment booked successfully',
@@ -278,44 +289,28 @@ const cancelAppointment = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Unauthorized action' });
         }
 
-        await appointmentModel.findByIdAndUpdate(appointmentId, { 
-            status: 'Cancelled',
-            cancelled: true 
-        });
+        await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true });
 
-        const { doctor: docId, slotDate, slotTime } = appointmentData;
+        const { docId, slotDate, slotTime } = appointmentData;
         const doctorData = await doctorModel.findById(docId);
         const userData = await userModel.findById(userId);
 
-        if (doctorData && doctorData.slots_booked && doctorData.slots_booked[slotDate]) {
-            let slots_booked = doctorData.slots_booked;
-            slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime);
+        let slots_booked = doctorData.slots_booked;
+        slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime);
 
-            await doctorModel.findByIdAndUpdate(docId, { slots_booked });
-        }
+        await doctorModel.findByIdAndUpdate(docId, { slots_booked });
 
         // --- Notification logic ---
         const Notification = (await import('../models/notificationModel.js')).default;
+        
         // Notify doctor
         await Notification.create({
           recipient: docId,
           recipientType: 'doctor',
-          sender: userId,
-          senderType: 'user',
+          recipientId: docId,
           type: 'appointment_cancel',
-          content: `Appointment canceled by ${userData?.name || 'user'} for ${slotDate} at ${slotTime}`,
-          link: `/doctor/appointments/${appointmentId}`
-        });
-
-        // Notify user
-        await Notification.create({
-          recipient: userId,
-          recipientType: 'user',
-          sender: docId,
-          senderType: 'doctor',
-          type: 'appointment_cancel',
-          content: `Your appointment for ${slotDate} at ${slotTime} has been cancelled.`,
-          link: `/appointments/${appointmentId}`
+          message: `Appointment canceled by ${userData?.name || 'user'} for ${slotDate} at ${slotTime}`,
+          relatedAppointment: appointmentId
         });
         // --- End notification logic ---
 

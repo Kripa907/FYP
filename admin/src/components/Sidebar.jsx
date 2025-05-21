@@ -7,15 +7,15 @@ const Sidebar = () => {
   const { aToken } = useContext(AdminContext);
 
   return (
-    <div className="min-h-screen w-64 p-6 bg-white shadow-md rounded-lg">
+    <div className="min-h-screen w-64 py-10 px-6 bg-white shadow-md border-r border-gray-200">
       {aToken && (
-        <ul className="space-y-4 mt-6">
+        <ul className="space-y-4 mt-12">
           <NavLink
             to="/"
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
                 isActive
-                  ? 'bg-[#F2F3FF] border-l-4 border-primary font-semibold'
+                  ? 'bg-[#F2F3FF] border-l-4 border-primary font-semibold text-blue-600'
                   : 'hover:bg-gray-100 text-gray-700'
               }`
             }
@@ -29,7 +29,7 @@ const Sidebar = () => {
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
                 isActive
-                  ? 'bg-[#F2F3FF] border-l-4 border-primary font-semibold'
+                  ? 'bg-[#F2F3FF] border-l-4 border-primary font-semibold text-blue-600'
                   : 'hover:bg-gray-100 text-gray-700'
               }`
             }
@@ -43,7 +43,7 @@ const Sidebar = () => {
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
                 isActive
-                  ? 'bg-[#F2F3FF] border-l-4 border-primary font-semibold'
+                  ? 'bg-[#F2F3FF] border-l-4 border-primary font-semibold text-blue-600'
                   : 'hover:bg-gray-100 text-gray-700'
               }`
             }
@@ -57,7 +57,7 @@ const Sidebar = () => {
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
                 isActive
-                  ? 'bg-[#F2F3FF] border-l-4 border-primary font-semibold'
+                  ? 'bg-[#F2F3FF] border-l-4 border-primary font-semibold text-blue-600'
                   : 'hover:bg-gray-100 text-gray-700'
               }`
             }
@@ -71,7 +71,7 @@ const Sidebar = () => {
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
                 isActive
-                  ? 'bg-[#F2F3FF] border-l-4 border-primary font-semibold'
+                  ? 'bg-[#F2F3FF] border-l-4 border-primary font-semibold text-blue-600'
                   : 'hover:bg-gray-100 text-gray-700'
               }`
             }
@@ -85,7 +85,7 @@ const Sidebar = () => {
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
                 isActive
-                  ? 'bg-[#F2F3FF] border-l-4 border-primary font-semibold'
+                  ? 'bg-[#F2F3FF] border-l-4 border-primary font-semibold text-blue-600'
                   : 'hover:bg-gray-100 text-gray-700'
               }`
             }
