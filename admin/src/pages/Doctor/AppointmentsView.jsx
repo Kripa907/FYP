@@ -45,12 +45,12 @@ const AppointmentsView = () => {
         headers: { 'Authorization': dToken }
       });
 
+      const fetchedAppointments = Array.isArray(appointmentsResponse.data) ? appointmentsResponse.data : [];
       // Fetch medical records
       const recordsResponse = await axios.get(`${backendUrl}/api/medical-records`, {
         headers: { 'Authorization': dToken }
       });
 
-      const fetchedAppointments = Array.isArray(appointmentsResponse.data) ? appointmentsResponse.data : [];
       const fetchedRecords = Array.isArray(recordsResponse.data.records) ? recordsResponse.data.records : [];
 
       // Merge records into appointments
@@ -324,29 +324,29 @@ const AppointmentsView = () => {
   };
 
   const getStatusBadgeClass = (status) => {
-    switch ((status || '').toLowerCase()) {
-      case 'confirmed':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'cancelled':
-      case 'canceled':
-        return 'bg-gray-100 text-gray-800';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800';
-      case 'pending':
+    switch (status) {
+      case 'Pending':
         return 'bg-yellow-100 text-yellow-800';
+      case 'Confirmed':
+        return 'bg-green-100 text-green-800';
+      case 'Completed':
+        return 'bg-blue-100 text-blue-800';
+      case 'Canceled':
+        return 'bg-red-100 text-red-800';
+      case 'Rejected':
+        return 'bg-gray-100 text-gray-800';
       default:
-        return 'bg-gray-100 text-gray-600';
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   // Filtering appointments
-  const filteredAppointments = appointments.filter((appointment) => {
-    const matchesSearch = appointment.user?.name?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'All' || appointment.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredAppointments = appointments.filter(appointment =>
+    statusFilter === 'All' ||
+    appointment.status === statusFilter
+  ).filter(appointment =>
+    appointment.user?.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleApprove = (appointmentId) => handleStatusChange(appointmentId, 'approve');
   const handleReject = (appointmentId) => handleStatusChange(appointmentId, 'reject');

@@ -335,4 +335,30 @@ doctorRouter.get('/profile', authDoctor, async (req, res) => {
   }
 });
 
+// Get doctor profile by ID for public view
+doctorRouter.get('/:docId', async (req, res) => {
+  try {
+    const doctor = await doctorModel.findById(req.params.docId).select('-password');
+
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      doctor
+    });
+  } catch (error) {
+    console.error('Error fetching doctor profile by ID:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch doctor profile',
+      error: error.message
+    });
+  }
+});
+
 export default doctorRouter;

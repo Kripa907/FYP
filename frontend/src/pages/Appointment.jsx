@@ -27,7 +27,7 @@ const Appointment = () => {
 
     try {
       console.log('Fetching full doctor profile for docId:', docId);
-      const response = await axios.get(`${backendUrl}/api/doctor/profile`, {
+      const response = await axios.get(`${backendUrl}/api/doctor/${docId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }

@@ -4,7 +4,7 @@ import React from 'react';
 const EditRecordModal = ({ record, onClose, onUpdate }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={onClose}>
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-xl overflow-hidden flex flex-col max-h-[95vh]" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-lg shadow-xl w-full overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="p-6 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-xl font-bold text-gray-800">Edit Medical Record</h2>
           <p className="text-sm text-gray-600 mt-1">Update the medical record information for {record.patient}</p>
@@ -14,7 +14,7 @@ const EditRecordModal = ({ record, onClose, onUpdate }) => {
           e.preventDefault();
           onUpdate(record);
         }} className="flex flex-col flex-grow">
-          <div className="p-4 overflow-y-auto flex-grow h-0">
+          <div className="p-4 flex-grow">
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Patient</label>
