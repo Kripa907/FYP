@@ -3,10 +3,11 @@ import { Bell, Check, X, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
 import { NotificationContext } from '../context/NotificationContext';
+import axios from 'axios';
 
 const NotificationsPage = () => {
     console.log('NotificationsPage component rendering');
-    const { notifications, unreadCount, fetchNotifications, markAsRead, markAllAsRead, deleteNotification } = useContext(NotificationContext);
+    const { notifications, fetchNotifications, markAsRead, markAllAsRead, deleteNotification } = useContext(NotificationContext);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filter, setFilter] = useState('all');
@@ -15,14 +16,52 @@ const NotificationsPage = () => {
         fetchNotifications();
     }, [fetchNotifications]);
 
-    // Temporarily disable filtering to check if notifications are received
-    // const filteredNotifications = notifications.filter(notif => {
-    //     const matchesSearch = notif.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    //                         notif.message?.toLowerCase().includes(searchQuery.toLowerCase());
-    //     const matchesFilter = filter === 'all' || (notif.type && notif.type.toLowerCase() === filter.toLowerCase());
-    //     return matchesSearch && matchesFilter;
-    // });
-    const filteredNotifications = notifications; // Use all notifications from context
+    // Filter notifications based on search query and filter type
+    const filteredNotifications = notifications.filter(notif => {
+        const matchesSearch = notif.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            notif.type?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesFilter = filter === 'all' || (notif.type && notif.type.toLowerCase() === filter.toLowerCase());
+        return matchesSearch && matchesFilter;
+    });
+
+    const formatTime = (timestamp) => {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+
+        if (diffInSeconds < 60) {
+            return 'just now';
+        } else if (diffInSeconds < 3600) {
+            const minutes = Math.floor(diffInSeconds / 60);
+            return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+        } else if (diffInSeconds < 86400) {
+            const hours = Math.floor(diffInSeconds / 3600);
+            return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        } else {
+            return date.toLocaleDateString();
+        }
+    };
+
+    const getNotificationIcon = (type) => {
+        switch (type) {
+            case 'appointment':
+                return '📅';
+            case 'appointment_approve':
+                return '✅';
+            case 'appointment_reject':
+                return '❌';
+            case 'appointment_cancel':
+                return '🚫';
+            case 'appointment_complete':
+                return '🎉';
+            case 'message':
+                return '💬';
+            case 'payment':
+                return '💰';
+            default:
+                return '📢';
+        }
+    };
 
     return (
         <div className="p-6 space-y-6">
@@ -51,30 +90,32 @@ const NotificationsPage = () => {
                 >
                     <option value="all">All Types</option>
                     <option value="appointment">Appointments</option>
-                    <option value="application">Applications</option>
+                    <option value="payment">Payments</option>
+                    <option value="message">Messages</option>
                     <option value="system">System</option>
-                    <option value="patient">Patients</option>
                 </select>
             </div>
 
             <div className="space-y-4">
                 {filteredNotifications.length > 0 ? (
                     filteredNotifications.map((notification) => {
-                        console.log('Rendering notification:', notification); // Log each notification object
+                        console.log('Rendering notification:', notification);
                         return (
                             <div
-                                key={notification._id} // Use _id as the key
+                                key={notification._id}
                                 className={`p-4 border rounded-lg ${!notification.read ? 'bg-blue-50' : ''}`}
                             >
                                 <div className="flex justify-between items-start">
                                     <div className="flex items-start gap-3">
                                         <div className="p-2 bg-blue-100 rounded-full">
-                                            <Bell className="h-5 w-5 text-blue-600" />
+                                            <span className="text-lg">{getNotificationIcon(notification.type)}</span>
                                         </div>
                                         <div>
-                                            <h3 className="font-medium">{notification.title || 'No Title'}</h3> {/* Add fallback */}
-                                            <p className="text-sm text-gray-600 mt-1">{notification.message || 'No message'}</p> {/* Add fallback */}
-                                            <span className="text-xs text-gray-500 mt-1 block">{notification.time ? new Date(notification.time).toLocaleString() : 'Invalid Date'}</span> {/* Add check and fallback */}
+                                            <h3 className="font-medium capitalize">{notification.type?.replace(/_/g, ' ') || 'No Type'}</h3>
+                                            <p className="text-sm text-gray-600 mt-1">{notification.content || 'No content'}</p>
+                                            <span className="text-xs text-gray-500 mt-1 block">
+                                                {notification.createdAt ? formatTime(notification.createdAt) : 'Invalid Date'}
+                                            </span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -82,7 +123,7 @@ const NotificationsPage = () => {
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={() => markAsRead(notification.id || notification._id)}
+                                                onClick={() => markAsRead(notification._id)}
                                                 className="text-blue-600 hover:text-blue-800"
                                             >
                                                 <Check className="h-4 w-4" />
@@ -91,7 +132,7 @@ const NotificationsPage = () => {
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => deleteNotification(notification.id || notification._id)}
+                                            onClick={() => deleteNotification(notification._id)}
                                             className="text-gray-400 hover:text-red-600"
                                         >
                                             <X className="h-4 w-4" />

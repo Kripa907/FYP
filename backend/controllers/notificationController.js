@@ -59,6 +59,27 @@ export const sendPaymentNotification = async (req, res) => {
       time: appointment.slotTime,
       amount: appointment.amount
     };
+
+    // Create admin notification
+    const adminNotification = new Notification({
+      recipientType: 'admin',
+      type: 'payment',
+      content: `Payment received from ${notificationData.patientName} for appointment on ${notificationData.date} at ${notificationData.time}`,
+      read: false
+    });
+    await adminNotification.save();
+
+    // Create doctor notification if doctor exists
+    if (appointment.doctor && appointment.doctor._id) {
+      const doctorNotification = new Notification({
+        recipient: appointment.doctor._id,
+        recipientType: 'doctor',
+        type: 'payment',
+        content: `Payment received from ${notificationData.patientName} for appointment on ${notificationData.date} at ${notificationData.time}`,
+        read: false
+      });
+      await doctorNotification.save();
+    }
     
     // Send notification to admin room
     io.to('admin-room').emit('payment-notification', notificationData);
@@ -289,5 +310,21 @@ export const createNotification = async (req, res) => {
       message: 'Failed to create notification',
       error: error.message
     });
+  }
+};
+
+export const markNotificationAsReadAdmin = async (req, res) => {
+  try {
+    const notification = await Notification.findOneAndUpdate(
+      { _id: req.params.id, recipientType: 'admin' },
+      { read: true },
+      { new: true }
+    );
+    if (!notification) {
+      return res.status(404).json({ success: false, message: 'Notification not found' });
+    }
+    res.json({ success: true, notification });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };

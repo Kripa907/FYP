@@ -7,7 +7,8 @@ import {
   sendPaymentNotification,
   getNotifications,
   markAllReadAdmin,
-  deleteNotificationAdmin
+  deleteNotificationAdmin,
+  markNotificationAsReadAdmin
 } from '../controllers/notificationController.js';
 import authUser from '../middlewares/authUser.js';
 import authAdmin from '../middlewares/authAdmin.js';
@@ -25,6 +26,7 @@ notificationRouter.delete('/:id', authUser, deleteNotificationAdmin);
 notificationRouter.get('/admin', authAdmin, getNotifications);
 notificationRouter.put('/admin/markAllRead', authAdmin, markAllReadAdmin);
 notificationRouter.delete('/admin/:id', authAdmin, deleteNotificationAdmin);
+notificationRouter.put('/admin/markRead/:id', authAdmin, markNotificationAsReadAdmin);
 
 // Doctor routes
 notificationRouter.get('/doctor', verifyDoctor, getNotifications);

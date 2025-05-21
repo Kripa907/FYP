@@ -97,8 +97,7 @@ const NotificationContextProvider = ({ children }) => {
       console.log('Using headers:', headers);
       
       const response = await axios.get(url, { headers });
-      console.log('Response:', response.data);
-      
+      console.log('NotificationContext - Fetched notifications:', response.data);
       if (response.data.success) {
         // Map notifications to ensure each has an "id" property.
         const mappedNotifications = response.data.notifications.map(notif =>
@@ -106,6 +105,7 @@ const NotificationContextProvider = ({ children }) => {
         );
         setNotifications(mappedNotifications);
         setUnreadCount(mappedNotifications.filter(n => !n.read).length);
+        console.log('NotificationContext - Set notifications:', mappedNotifications);
       } else {
         toast.error(response.data.message || "Failed to fetch notifications");
         if (response.data.message.includes("Not Authorized")) {
@@ -114,7 +114,7 @@ const NotificationContextProvider = ({ children }) => {
         }
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.error('NotificationContext - Error fetching notifications:', error);
       toast.error("Error fetching notifications");
     }
   };
@@ -139,8 +139,9 @@ const NotificationContextProvider = ({ children }) => {
       setNotifications(updatedNotifications);
       setUnreadCount(0);
       toast.success("All notifications marked as read");
+      console.log('NotificationContext - Updated notifications after mark all as read');
     } catch (error) {
-      console.error("Error marking all as read", error);
+      console.error('NotificationContext - Error marking all as read:', error);
       toast.error("Could not mark all notifications as read");
     }
   };
@@ -157,12 +158,10 @@ const NotificationContextProvider = ({ children }) => {
       } else {
         url = `${backendUrl}/api/notifications/user/markRead/${id}`;
       }
-      
       await axios.put(url, {}, { headers: { Authorization: `Bearer ${token}` } });
-      
       // Update local state: mark the notification as read.
       const updatedNotifications = notifications.map(notif =>
-        notif.id === id ? { ...notif, read: true } : notif
+        notif._id === id ? { ...notif, read: true } : notif
       );
       setNotifications(updatedNotifications);
       setUnreadCount(updatedNotifications.filter(n => !n.read).length);
@@ -192,11 +191,17 @@ const NotificationContextProvider = ({ children }) => {
       setNotifications(newNotifications);
       setUnreadCount(newNotifications.filter(n => !n.read).length);
       toast.success("Notification deleted");
+      console.log('NotificationContext - Delete notification response:', { success: true });
+      console.log('NotificationContext - Updated notifications after delete');
     } catch (error) {
-      console.error("Error deleting notification:", error);
+      console.error('NotificationContext - Error deleting notification:', error);
       toast.error("Could not delete notification");
     }
   };
+
+  useEffect(() => {
+    console.log('NotificationContext - Initial notifications state:', notifications);
+  }, [notifications]);
 
   return (
     <NotificationContext.Provider

@@ -93,15 +93,15 @@ const Navbar = () => {
                                 ) : (
                                   adminNotifs.map(notification => (
                                     <div 
-                                      key={notification.id}
+                                      key={notification._id}
                                       className={`px-4 py-3 border-b hover:bg-gray-50 ${!notification.read ? 'bg-blue-50' : ''}`}
                                     >
                                       <div className="flex justify-between">
-                                        <p className="text-sm font-medium text-gray-900">{notification.title}</p>
+                                        <p className="text-sm font-medium text-gray-900 capitalize">{notification.type?.replace(/_/g, ' ') || 'Notification'}</p>
                                         <div className="flex space-x-2">
                                           {!notification.read && (
                                             <button 
-                                              onClick={() => markAsRead(notification.id)}
+                                              onClick={() => markAsRead(notification._id)}
                                               className="text-gray-400 hover:text-blue-500"
                                               title="Mark as read"
                                             >
@@ -109,7 +109,7 @@ const Navbar = () => {
                                             </button>
                                           )}
                                           <button 
-                                            onClick={() => deleteNotification(notification.id)}
+                                            onClick={() => deleteNotification(notification._id)}
                                             className="text-gray-400 hover:text-red-500"
                                             title="Delete"
                                           >
@@ -117,8 +117,8 @@ const Navbar = () => {
                                           </button>
                                         </div>
                                       </div>
-                                      <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-                                      <p className="text-xs text-gray-400 mt-1">{notification.time}</p>
+                                      <p className="text-sm text-gray-600 mt-1">{notification.content || 'No content'}</p>
+                                      <p className="text-xs text-gray-400 mt-1">{notification.createdAt ? new Date(notification.createdAt).toLocaleString() : ''}</p>
                                     </div>
                                   ))
                                 )}
