@@ -1,5 +1,5 @@
 import express from 'express';
-import { addUser, forgotPassword, loginUser, resetPassword, bookAppointment, listAppointment, listRequestedAppointments, cancelAppointment, getProfile, updateProfile, uploadProfileImage } from '../controllers/userController.js';
+import { addUser, forgotPassword, loginUser, resetPassword, bookAppointment, listAppointment, listRequestedAppointments, cancelAppointment, cancelRequestedAppointment, getProfile, updateProfile, uploadProfileImage } from '../controllers/userController.js';
 import authUser from '../middlewares/authUser.js';
 import upload from '../middlewares/uploadMiddleware.js';
 
@@ -16,6 +16,6 @@ userRouter.post('/reset-password/:token', resetPassword);
 userRouter.get('/appointments', authUser, listAppointment);
 userRouter.get('/requested-appointments', authUser, listRequestedAppointments);
 userRouter.post('/cancel-appointment', authUser, cancelAppointment);
-userRouter.post('/cancel-requested-appointment', authUser, cancelAppointment);
+userRouter.post('/cancel-requested-appointment', authUser, cancelRequestedAppointment);
 
 export default userRouter;

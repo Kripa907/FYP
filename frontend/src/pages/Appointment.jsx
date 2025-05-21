@@ -135,7 +135,7 @@ const Appointment = () => {
 
       if (response.data.success) {
         toast.success('Appointment requested successfully');
-        navigate('/my-appointments');
+        navigate('/appointments');
       } else {
         toast.error(response.data.message || 'Failed to book appointment');
       }
@@ -174,8 +174,7 @@ const Appointment = () => {
                 
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-bold text-gray-900">{profileData.name}</h1> {/* Use profileData */}
-                    <img className="w-5" src={assets.verified_icon} alt="Verified" />
+                    <h1 className="text-2xl font-bold text-gray-900">{profileData.name}</h1>
                   </div>
                   
                   <div className="flex items-center gap-2 mt-1">

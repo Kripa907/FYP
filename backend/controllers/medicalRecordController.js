@@ -2,6 +2,7 @@ import MedicalRecord from '../models/MedicalRecordModel.js';
 import cloudinary from '../config/cloudinary.js';
 import { Readable } from 'stream';
 import Appointment from '../models/appointmentModel.js';
+import Doctor from '../models/doctorModel.js';
 import fs from 'fs';
 import User from '../models/userModel.js';
 
@@ -240,6 +241,57 @@ export const updateMedicalRecord = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to update medical record',
+      error: error.message
+    });
+  }
+};
+
+// Get medical records for a specific user
+export const getUserMedicalRecords = async (req, res) => {
+  try {
+    console.log('Getting medical records for user:', req.user._id);
+
+    if (!req.user || !req.user._id) {
+      console.error('User ID not found in request:', req.user);
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+    }
+
+    const records = await MedicalRecord.find({ patient: req.user._id })
+      .populate('doctor', 'name speciality')
+      .populate('appointment', 'slotDate slotTime')
+      .sort({ date: -1 });
+
+    console.log('Found records:', records.length);
+    console.log('First record sample:', records[0] ? {
+      id: records[0]._id,
+      recordType: records[0].recordType,
+      doctor: records[0].doctor,
+      appointment: records[0].appointment
+    } : 'No records found');
+
+    res.status(200).json({
+      success: true,
+      records: records.map(record => ({
+        _id: record._id,
+        recordType: record.recordType,
+        notes: record.notes,
+        attachmentUrl: record.attachmentUrl,
+        doctor: record.doctor,
+        appointment: record.appointment,
+        date: record.date,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt
+      }))
+    });
+  } catch (error) {
+    console.error('Error in getUserMedicalRecords:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch medical records',
       error: error.message
     });
   }

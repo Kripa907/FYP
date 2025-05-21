@@ -276,47 +276,41 @@ const bookAppointment = async (req, res) => {
 // API to cancel the appointment
 const cancelAppointment = async (req, res) => {
     try {
-        const { userId, appointmentId } = req.body;
+        const { appointmentId } = req.body;
+        const userId = req.user._id; // Get user ID from auth middleware
 
         const appointmentData = await appointmentModel.findById(appointmentId);
 
-        if (appointmentData.user.toString() !== userId) {
-            return res.json({ success: false, message: 'Unauthorized action' });
+        if (!appointmentData) {
+            return res.status(404).json({ success: false, message: 'Appointment not found' });
         }
 
-        await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true, status: 'Cancelled' }); // Update status to Cancelled
+        if (appointmentData.user.toString() !== userId.toString()) {
+            return res.status(403).json({ success: false, message: 'Unauthorized action' });
+        }
 
-        const { doctor: docId, slotDate, slotTime } = appointmentData; // Use object destructuring and correct field name
+        await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true });
+
+        const { docId, slotDate, slotTime } = appointmentData;
         const doctorData = await doctorModel.findById(docId);
         const userData = await userModel.findById(userId);
 
-        // Remove slot from doctor's booked slots (if applicable)
-        if (doctorData.slots_booked?.[slotDate]) {
-            doctorData.slots_booked[slotDate] = doctorData.slots_booked[slotDate].filter(e => e !== slotTime);
-            await doctorData.save();
-        }
+        let slots_booked = doctorData.slots_booked;
+        slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime);
+
+        await doctorModel.findByIdAndUpdate(docId, { slots_booked });
 
         // --- Notification logic ---
         const Notification = (await import('../models/notificationModel.js')).default;
         
         // Notify doctor
         await Notification.create({
-          recipientType: 'doctor',
           recipient: docId,
+          recipientType: 'doctor',
+          recipientId: docId,
           type: 'appointment_cancel',
-          content: `Appointment canceled by ${userData?.name || 'user'} for ${slotDate} at ${slotTime}`,
-          link: `/doctor/appointments/${appointmentId}`
-        });
-
-        // Notify admin
-        await Notification.create({
-          recipientType: 'admin',
-          recipient: 'admin', // Assuming a fixed recipient identifier for admin
-          type: 'appointment_cancel',
-          content: `Appointment cancelled by ${userData?.name || 'user'} for Dr. ${doctorData?.name || ''} on ${slotDate} at ${slotTime}`,
-          sender: userId,
-          senderType: 'user',
-          link: `/admin/appointments/${appointmentId}`
+          message: `Appointment canceled by ${userData?.name || 'user'} for ${slotDate} at ${slotTime}`,
+          relatedAppointment: appointmentId
         });
         // --- End notification logic ---
 
@@ -450,6 +444,70 @@ const uploadProfileImage = async (req, res) => {
   }
 };
 
+// API to cancel a requested appointment
+const cancelRequestedAppointment = async (req, res) => {
+    try {
+        const { appointmentId } = req.body;
+        const userId = req.user._id;
+
+        const appointmentData = await appointmentModel.findById(appointmentId);
+
+        if (!appointmentData) {
+            return res.status(404).json({ success: false, message: 'Appointment not found' });
+        }
+
+        if (appointmentData.user.toString() !== userId.toString()) {
+            return res.status(403).json({ success: false, message: 'Unauthorized action' });
+        }
+
+        if (appointmentData.status !== 'Pending') {
+            return res.status(400).json({ success: false, message: 'Can only cancel pending appointments' });
+        }
+
+        await appointmentModel.findByIdAndUpdate(appointmentId, { 
+            status: 'Cancelled',
+            cancelled: true 
+        });
+
+        const { doctor: docId, slotDate, slotTime } = appointmentData;
+        const doctorData = await doctorModel.findById(docId);
+        const userData = await userModel.findById(userId);
+
+        if (doctorData && doctorData.slots_booked && doctorData.slots_booked[slotDate]) {
+            let slots_booked = doctorData.slots_booked;
+            slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime);
+
+            await doctorModel.findByIdAndUpdate(docId, { slots_booked });
+        }
+
+        // Create notifications
+        await Notification.create({
+            recipient: docId,
+            recipientType: 'doctor',
+            sender: userId,
+            senderType: 'user',
+            type: 'appointment_cancel',
+            content: `Appointment request canceled by ${userData?.name || 'user'} for ${slotDate} at ${slotTime}`,
+            link: `/doctor/appointments/${appointmentId}`
+        });
+
+        await Notification.create({
+            recipient: userId,
+            recipientType: 'user',
+            sender: docId,
+            senderType: 'doctor',
+            type: 'appointment_cancel',
+            content: `Your appointment request for ${slotDate} at ${slotTime} has been cancelled.`,
+            link: `/appointments/${appointmentId}`
+        });
+
+        res.json({ success: true, message: 'Appointment request cancelled successfully' });
+    } catch (error) {
+        console.error('Error cancelling appointment request:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 export {
   addUser,
   loginUser,
@@ -459,6 +517,7 @@ export {
   updateProfile,
   bookAppointment,
   cancelAppointment,
+  cancelRequestedAppointment,
   listAppointment,
   listRequestedAppointments,
   uploadProfileImage

@@ -41,6 +41,7 @@ doctorSchema.methods.calculateAverageRating = function() {
     return this.save();
 };
 
+// Use lowercase model name
 const doctorModel = mongoose.models.doctor || mongoose.model('doctor', doctorSchema);
 
 export default doctorModel;

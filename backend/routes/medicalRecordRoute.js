@@ -2,7 +2,8 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import { authDoctor } from '../middlewares/authDoctor.js';
-import { saveMedicalRecord, getAllMedicalRecords, getRecentMedicalRecords, deleteMedicalRecord, updateMedicalRecord } from '../controllers/medicalRecordController.js';
+import authUser from '../middlewares/authUser.js';
+import { saveMedicalRecord, getAllMedicalRecords, getRecentMedicalRecords, deleteMedicalRecord, updateMedicalRecord, getUserMedicalRecords } from '../controllers/medicalRecordController.js';
 import upload from '../middlewares/multer.js';
 
 const router = express.Router();
@@ -12,6 +13,9 @@ router.get('/', authDoctor, getAllMedicalRecords);
 
 // Get recent medical records
 router.get('/recent', authDoctor, getRecentMedicalRecords);
+
+// Get user's medical records
+router.get('/user', authUser, getUserMedicalRecords);
 
 // Create new medical record
 router.post('/', authDoctor, upload.single('record'), saveMedicalRecord);

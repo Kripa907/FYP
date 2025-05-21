@@ -72,10 +72,6 @@ const TopDoctors = () => {
                         >
                             <div className="relative">
                                 <img className='w-full h-48 object-cover bg-blue-50' src={doctor.image} alt={doctor.name}/>
-                                <div className="absolute bottom-2 left-2 bg-white/90 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                                    <span className={`w-2 h-2 rounded-full ${doctor.available ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                                    {doctor.available ? 'Available' : 'Unavailable'}
-                                </div>
                             </div>
                             <div className='p-4'>
                                 <p className='text-gray-900 text-lg font-medium'>{doctor.name}</p>
