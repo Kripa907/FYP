@@ -24,6 +24,10 @@ const PatientList = () => {
     // eslint-disable-next-line
   }, [aToken]);
 
+  useEffect(() => {
+    console.log('Fetched patients:', patients);
+  }, [patients]);
+
   const fetchPatients = async () => {
     try {
       const res = await axios.get(`${backendUrl}/api/admin/patients`, {
@@ -88,7 +92,6 @@ const PatientList = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration Date</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
@@ -114,16 +117,7 @@ const PatientList = () => {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">{patient.gender}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{patient.createdAt ? new Date(patient.createdAt).toLocaleDateString() : ''}</div>
-                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button 
-                    onClick={() => handleEditClick(patient)}
-                    className="text-green-600 hover:text-green-900 mr-3"
-                  >
-                    Edit
-                  </button>
                   <button 
                     onClick={() => handleDeleteClick(patient)}
                     className="text-red-600 hover:text-red-900"

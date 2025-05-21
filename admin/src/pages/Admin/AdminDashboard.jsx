@@ -3,6 +3,8 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
+const backendUrl = "http://localhost:4001";
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [doctors, setDoctors] = useState([]);
@@ -22,7 +24,7 @@ const AdminDashboard = () => {
 
   const fetchAppointments = async () => {
     try {
-      const response = await axios.get("http://localhost:4001/api/admin/appointments", {
+      const response = await axios.get(`${backendUrl}/api/admin/appointments`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("aToken")}`,
         },
@@ -109,7 +111,7 @@ const AdminDashboard = () => {
 
   const fetchPatientCount = async () => {
     try {
-      const response = await axios.get("http://localhost:4001/api/admin/patient-count", {
+      const response = await axios.get(`${backendUrl}/api/admin/patient-count`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("aToken")}`,
         },
@@ -130,7 +132,7 @@ const AdminDashboard = () => {
     }
 
     try {
-      const response = await axios.get("http://localhost:4001/api/admin/pending-doctors", {
+      const response = await axios.get(`${backendUrl}/api/admin/pending-doctors`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -143,7 +145,7 @@ const AdminDashboard = () => {
           name: doc.name,
           email: doc.email,
           specialty: doc.speciality || doc.specialty || "Not specified",
-          image: doc.image || "https://via.placeholder.com/150",
+          image: doc.image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(doc.name) + "&background=random",
         }));
         setDoctors(formattedDoctors);
       } else {
@@ -158,7 +160,7 @@ const AdminDashboard = () => {
 
   const fetchDoctorCount = async () => {
     try {
-      const response = await axios.get("http://localhost:4001/api/admin/doctor-count", {
+      const response = await axios.get(`${backendUrl}/api/admin/doctor-count`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("aToken")}`,
         },
@@ -172,7 +174,7 @@ const AdminDashboard = () => {
 
   const handleApproveDoctor = async (id) => {
     try {
-      const response = await axios.put(`http://localhost:4001/api/admin/approve-doctor/${id}`, {}, {
+      const response = await axios.put(`${backendUrl}/api/admin/approve-doctor/${id}`, {}, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("aToken")}`,
         },
@@ -189,7 +191,7 @@ const AdminDashboard = () => {
 
   const handleRejectDoctor = async (id) => {
     try {
-      const response = await axios.put(`http://localhost:4001/api/admin/reject-doctor/${id}`, {}, {
+      const response = await axios.put(`${backendUrl}/api/admin/reject-doctor/${id}`, {}, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("aToken")}`,
         },
