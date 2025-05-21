@@ -8,12 +8,14 @@ import Doctornavbar from '../../components/ui/Doctornavbar';
 
 const AllAppointment = () => {
   const { aToken, appointments, getAllAppointments, deleteAppointment, isLoading } = useContext(AdminContext);
-  const { calculateAge, slotDateFormat, currency } = useContext(AppContext);
+  const { calculateAge, slotDateFormat, currency, slotTimeFormat } = useContext(AppContext);
   const [dateRange, setDateRange] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [localAppointments, setLocalAppointments] = useState([]);
   const dataFetchedRef = useRef(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [appointmentToDeleteId, setAppointmentToDeleteId] = useState(null);
 
   // Fetch appointments only once when component mounts
   useEffect(() => {
@@ -147,17 +149,24 @@ const AllAppointment = () => {
     });
   };
 
+  // Handle delete click to open modal
+  const handleDeleteClick = (id) => {
+    setAppointmentToDeleteId(id);
+    setDeleteModalOpen(true);
+  };
+
   // Confirm and delete appointment
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this appointment?')) return;
+  const handleConfirmDelete = async () => {
+    if (!appointmentToDeleteId) return;
+    setDeleteModalOpen(false); // Close modal immediately
     setLoading(true);
     try {
-      const success = await deleteAppointment(id);
+      const success = await deleteAppointment(appointmentToDeleteId);
       if (success) {
         toast.success('Appointment deleted');
         // Update local state immediately to improve UI responsiveness
         // This prevents the need to refetch all appointments
-        setLocalAppointments(prev => prev.filter(apt => apt._id !== id));
+        setLocalAppointments(prev => prev.filter(apt => apt._id !== appointmentToDeleteId));
       } else {
         toast.error('Failed to delete appointment');
       }
@@ -166,7 +175,14 @@ const AllAppointment = () => {
       toast.error('Failed to delete appointment');
     } finally {
       setLoading(false);
+      setAppointmentToDeleteId(null); // Clear the ID
     }
+  };
+
+  // Cancel delete action
+  const handleCancelDelete = () => {
+    setDeleteModalOpen(false);
+    setAppointmentToDeleteId(null);
   };
 
   // Debug information
@@ -198,7 +214,7 @@ const AllAppointment = () => {
           <option value="all">All Status</option>
           <option value="pending">Pending</option>
           <option value="confirmed">Confirmed</option>
-          {/* <option value="completed">Completed</option> */}
+          <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
           <option value="rejected">Rejected</option>
         </select>
@@ -253,37 +269,62 @@ const AllAppointment = () => {
                         <span className="font-medium">{doctorName}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">{appointmentDate}</td>
-                    <td className="px-4 py-3">{appointmentTime}</td>
-                    <td className="px-4 py-3">{currency}{appointmentAmount}</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">{slotDateFormat(appointmentDate)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">{slotTimeFormat(appointmentTime)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">{currency}{appointmentAmount}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${apt.payment ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {apt.payment ? 'Paid' : 'Unpaid'}
-                      </span>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${apt.payment ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {apt.payment ? 'Paid' : 'Unpaid'}
+                        </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(appointmentStatus)}`}>
-                        {appointmentStatus}
-                      </span>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(appointmentStatus)}`}>
+                            {appointmentStatus}
+                        </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <button
-                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
-                        onClick={() => handleDelete(appointmentId)}
-                        disabled={loading || appointmentId.startsWith('temp-')}
-                      >
-                        Delete
-                      </button>
+                    <td className="px-4 py-3 text-sm">
+                        <button 
+                            onClick={() => handleDeleteClick(appointmentId)}
+                            className="text-red-600 hover:text-red-900"
+                        >
+                            Delete
+                        </button>
                     </td>
                   </tr>
-                );
+                )
               })
             )}
           </tbody>
         </table>
       </div>
-    </div>
-  );
-};
 
-export default AllAppointment;
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Confirm Deletion</h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this appointment? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCancelDelete}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default AllAppointment
