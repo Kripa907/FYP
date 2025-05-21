@@ -204,3 +204,43 @@ export const deleteMedicalRecord = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to delete medical record', error: error.message });
   }
 };
+
+// Update a medical record by ID
+export const updateMedicalRecord = async (req, res) => {
+  try {
+    const recordId = req.params.id;
+    const { recordType, date, notes, status } = req.body;
+
+    // Find the record
+    const record = await MedicalRecord.findById(recordId);
+    if (!record) {
+      return res.status(404).json({ success: false, message: 'Medical record not found' });
+    }
+
+    // Update the record
+    const updatedRecord = await MedicalRecord.findByIdAndUpdate(
+      recordId,
+      {
+        recordType,
+        date,
+        notes,
+        status
+      },
+      { new: true }
+    ).populate('patient', 'name email')
+     .populate('appointment', 'slotDate slotTime');
+
+    res.status(200).json({
+      success: true,
+      message: 'Medical record updated successfully',
+      record: updatedRecord
+    });
+  } catch (error) {
+    console.error('Error updating medical record:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update medical record',
+      error: error.message
+    });
+  }
+};

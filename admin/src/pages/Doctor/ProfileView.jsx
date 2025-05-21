@@ -1,17 +1,12 @@
-import React, { useEffect, useState, useContext } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarClock, FileText, Mail, MapPin, Edit } from 'lucide-react';
-import Doctorsidebar from '../../components/ui/Doctorsidebar';
-import Doctornavbar from '../../components/ui/Doctornavbar';
-import { DoctorContext } from '../../context/DoctorContext';
-import axios from 'axios';
+import React, { useEffect, useState, useContext } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CalendarClock, FileText, Mail, MapPin, Edit } from "lucide-react";
+import Doctorsidebar from "../../components/ui/Doctorsidebar";
+import Doctornavbar from "../../components/ui/Doctornavbar";
+import { DoctorContext } from "../../context/DoctorContext";
+import axios from "axios";
 import {
   Dialog,
   DialogContent,
@@ -20,56 +15,56 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { toast } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
-import { useNavigate } from 'react-router-dom';
+import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
 
 const EditProfileModal = ({ isOpen, onClose, doctorProfile, onUpdate }) => {
   const { backendUrl, dToken } = useContext(DoctorContext);
   const [formData, setFormData] = useState({
-    email: '',
-    addressLine1: '',
-    addressLine2: '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    email: "",
+    addressLine1: "",
+    addressLine2: "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (doctorProfile) {
-      console.log('Setting initial form data:', doctorProfile);
+      console.log("Setting initial form data:", doctorProfile);
       setFormData({
-        email: doctorProfile.email || '',
-        addressLine1: doctorProfile.address?.addressLine1 || '',
-        addressLine2: doctorProfile.address?.addressLine2 || '',
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
+        email: doctorProfile.email || "",
+        addressLine1: doctorProfile.address?.addressLine1 || "",
+        addressLine2: doctorProfile.address?.addressLine2 || "",
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
       });
     }
   }, [doctorProfile]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    console.log('Form field changed:', name, value);
-    setFormData(prev => ({
+    console.log("Form field changed:", name, value);
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const validateForm = () => {
-    console.log('Validating form data:', formData);
-    
+    console.log("Validating form data:", formData);
+
     // Email validation (only if changed)
     if (formData.email && formData.email !== doctorProfile.email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email)) {
-        console.log('Email validation failed: Invalid email format');
-        toast.error('Please enter a valid email address', {
+        console.log("Email validation failed: Invalid email format");
+        toast.error("Please enter a valid email address", {
           position: "top-center",
           autoClose: 3000,
           hideProgressBar: false,
@@ -86,30 +81,30 @@ const EditProfileModal = ({ isOpen, onClose, doctorProfile, onUpdate }) => {
     const hasNewPassword = !!formData.newPassword;
     const hasConfirmPassword = !!formData.confirmPassword;
 
-    console.log('Password fields status:', {
+    console.log("Password fields status:", {
       hasCurrentPassword,
       hasNewPassword,
-      hasConfirmPassword
+      hasConfirmPassword,
     });
 
     // If any password field is filled, validate all password fields
     if (hasCurrentPassword || hasNewPassword || hasConfirmPassword) {
       // If only current password is filled, clear it and continue
       if (hasCurrentPassword && !hasNewPassword && !hasConfirmPassword) {
-        console.log('Only current password provided, clearing password fields');
-        setFormData(prev => ({
+        console.log("Only current password provided, clearing password fields");
+        setFormData((prev) => ({
           ...prev,
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: ''
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
         }));
         return true;
       }
 
       // If any password field is filled but not all, show error
       if (!hasCurrentPassword || !hasNewPassword || !hasConfirmPassword) {
-        console.log('Password validation failed: Incomplete password fields');
-        toast.error('Please fill in all password fields to change password', {
+        console.log("Password validation failed: Incomplete password fields");
+        toast.error("Please fill in all password fields to change password", {
           position: "top-center",
           autoClose: 3000,
           hideProgressBar: false,
@@ -122,8 +117,8 @@ const EditProfileModal = ({ isOpen, onClose, doctorProfile, onUpdate }) => {
 
       // If all password fields are filled, validate them
       if (formData.newPassword.length < 6) {
-        console.log('Password validation failed: New password is too short');
-        toast.error('New password must be at least 6 characters long', {
+        console.log("Password validation failed: New password is too short");
+        toast.error("New password must be at least 6 characters long", {
           position: "top-center",
           autoClose: 3000,
           hideProgressBar: false,
@@ -135,8 +130,8 @@ const EditProfileModal = ({ isOpen, onClose, doctorProfile, onUpdate }) => {
       }
 
       if (formData.newPassword !== formData.confirmPassword) {
-        console.log('Password validation failed: Passwords do not match');
-        toast.error('New passwords do not match', {
+        console.log("Password validation failed: Passwords do not match");
+        toast.error("New passwords do not match", {
           position: "top-center",
           autoClose: 3000,
           hideProgressBar: false,
@@ -148,16 +143,16 @@ const EditProfileModal = ({ isOpen, onClose, doctorProfile, onUpdate }) => {
       }
     }
 
-    console.log('Form validation passed');
+    console.log("Form validation passed");
     return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submission started');
-    
+    console.log("Form submission started");
+
     if (!validateForm()) {
-      console.log('Form validation failed');
+      console.log("Form validation failed");
       return;
     }
 
@@ -171,11 +166,13 @@ const EditProfileModal = ({ isOpen, onClose, doctorProfile, onUpdate }) => {
       }
 
       // Only include address if it's changed
-      if (formData.addressLine1 !== doctorProfile.address?.addressLine1 || 
-          formData.addressLine2 !== doctorProfile.address?.addressLine2) {
+      if (
+        formData.addressLine1 !== doctorProfile.address?.addressLine1 ||
+        formData.addressLine2 !== doctorProfile.address?.addressLine2
+      ) {
         updateData.address = {
           addressLine1: formData.addressLine1,
-          addressLine2: formData.addressLine2
+          addressLine2: formData.addressLine2,
         };
       }
 
@@ -187,7 +184,7 @@ const EditProfileModal = ({ isOpen, onClose, doctorProfile, onUpdate }) => {
 
       // If no fields have changed, show message and return
       if (Object.keys(updateData).length === 0) {
-        toast.info('No changes detected', {
+        toast.info("No changes detected", {
           position: "top-center",
           autoClose: 3000,
           hideProgressBar: false,
@@ -199,23 +196,26 @@ const EditProfileModal = ({ isOpen, onClose, doctorProfile, onUpdate }) => {
         return;
       }
 
-      console.log('Sending request to:', `${backendUrl}/api/doctor/update-profile`);
-      console.log('Request data:', updateData);
+      console.log(
+        "Sending request to:",
+        `${backendUrl}/api/doctor/update-profile`,
+      );
+      console.log("Request data:", updateData);
 
       const response = await axios.put(
         `${backendUrl}/api/doctor/update-profile`,
         updateData,
         {
           headers: {
-            Authorization: dToken
-          }
-        }
+            Authorization: dToken,
+          },
+        },
       );
 
-      console.log('API Response:', response.data);
+      console.log("API Response:", response.data);
 
       if (response.data.success) {
-        toast.success('Profile updated successfully', {
+        toast.success("Profile updated successfully", {
           position: "top-center",
           autoClose: 3000,
           hideProgressBar: false,
@@ -226,7 +226,7 @@ const EditProfileModal = ({ isOpen, onClose, doctorProfile, onUpdate }) => {
         onUpdate(response.data.doctor);
         onClose();
       } else {
-        toast.error(response.data.message || 'Failed to update profile', {
+        toast.error(response.data.message || "Failed to update profile", {
           position: "top-center",
           autoClose: 3000,
           hideProgressBar: false,
@@ -236,21 +236,22 @@ const EditProfileModal = ({ isOpen, onClose, doctorProfile, onUpdate }) => {
         });
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
-      console.error('Error response:', error.response?.data);
-      
-      let errorMessage = 'An unexpected error occurred. Please try again later.';
-      
+      console.error("Error updating profile:", error);
+      console.error("Error response:", error.response?.data);
+
+      let errorMessage =
+        "An unexpected error occurred. Please try again later.";
+
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.response?.status === 400) {
-        errorMessage = 'Invalid input data. Please check your entries.';
+        errorMessage = "Invalid input data. Please check your entries.";
       } else if (error.response?.status === 401) {
-        errorMessage = 'Session expired. Please login again.';
+        errorMessage = "Session expired. Please login again.";
       } else if (error.response?.status === 403) {
-        errorMessage = 'You are not authorized to perform this action.';
+        errorMessage = "You are not authorized to perform this action.";
       } else if (error.response?.status === 404) {
-        errorMessage = 'Profile not found.';
+        errorMessage = "Profile not found.";
       }
 
       toast.error(errorMessage, {
@@ -272,7 +273,8 @@ const EditProfileModal = ({ isOpen, onClose, doctorProfile, onUpdate }) => {
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
           <DialogDescription>
-            Make changes to your profile information. Click save when you're done.
+            Make changes to your profile information. Click save when you're
+            done.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -350,7 +352,7 @@ const EditProfileModal = ({ isOpen, onClose, doctorProfile, onUpdate }) => {
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Saving...' : 'Save Changes'}
+              {isLoading ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </form>
@@ -370,21 +372,23 @@ const ProfileView = () => {
     const fetchDoctorProfile = async () => {
       try {
         const response = await axios.get(`${backendUrl}/api/doctor/profile`, {
-          headers: { 'Authorization': dToken }
+          headers: { Authorization: dToken },
         });
-        
+
         if (response.data.success) {
           setDoctorProfile(response.data.doctor);
         } else {
-          toast.error(response.data.message || 'Failed to fetch profile');
+          toast.error(response.data.message || "Failed to fetch profile");
         }
       } catch (error) {
-        console.error('Error fetching doctor profile:', error);
+        console.error("Error fetching doctor profile:", error);
         if (error.response?.status === 401) {
-          toast.error('Session expired. Please login again');
-          navigate('/login');
+          toast.error("Session expired. Please login again");
+          navigate("/login");
         } else {
-          toast.error(error.response?.data?.message || 'Failed to fetch profile');
+          toast.error(
+            error.response?.data?.message || "Failed to fetch profile",
+          );
         }
       } finally {
         setIsLoading(false);
@@ -394,8 +398,8 @@ const ProfileView = () => {
     if (dToken) {
       fetchDoctorProfile();
     } else {
-      toast.error('Please login to view profile');
-      navigate('/login');
+      toast.error("Please login to view profile");
+      navigate("/login");
     }
   }, [backendUrl, dToken, navigate]);
 
@@ -405,19 +409,19 @@ const ProfileView = () => {
         `${backendUrl}/api/doctor/update-profile`,
         updatedData,
         {
-          headers: { 'Authorization': dToken }
-        }
+          headers: { Authorization: dToken },
+        },
       );
 
       if (response.data.success) {
         setDoctorProfile(response.data.doctor);
-        toast.success('Profile updated successfully');
+        toast.success("Profile updated successfully");
       } else {
-        toast.error(response.data.message || 'Failed to update profile');
+        toast.error(response.data.message || "Failed to update profile");
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error(error.response?.data?.message || 'Failed to update profile');
+      console.error("Error updating profile:", error);
+      toast.error(error.response?.data?.message || "Failed to update profile");
     }
   };
 
@@ -465,10 +469,12 @@ const ProfileView = () => {
           <div className="mb-6 flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-800">My Profile</h1>
-              <p className="text-gray-600">View and manage your professional information</p>
+              <p className="text-gray-600">
+                View and manage your professional information
+              </p>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 transition-colors"
               onClick={() => setIsEditModalOpen(true)}
             >
@@ -484,39 +490,51 @@ const ProfileView = () => {
                 <CardContent className="p-6">
                   <div className="flex flex-col items-center text-center mb-8">
                     <Avatar className="h-24 w-24 mb-4">
-                      <AvatarImage src={doctorProfile?.image} alt={doctorProfile?.name} />
+                      <AvatarImage
+                        src={doctorProfile?.image}
+                        alt={doctorProfile?.name}
+                      />
                       <AvatarFallback className="bg-medical-primary text-white text-xl">
                         {doctorProfile?.name?.[0]}
                       </AvatarFallback>
                     </Avatar>
-                    <h2 className="text-2xl font-bold text-gray-800">{doctorProfile?.name}</h2>
+                    <h2 className="text-2xl font-bold text-gray-800">
+                      {doctorProfile?.name}
+                    </h2>
                   </div>
 
                   <div className="space-y-6">
                     <div className="flex items-center space-x-3">
                       <Mail className="h-5 w-5 text-gray-500" />
                       <div>
-                        <p className="text-sm font-medium text-gray-500">Email</p>
+                        <p className="text-sm font-medium text-gray-500">
+                          Email
+                        </p>
                         <p className="text-gray-900">{doctorProfile?.email}</p>
                       </div>
                     </div>
 
-                   <div className="flex items-start space-x-3">
-                    <MapPin className="h-5 w-5 text-gray-500 mt-1" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Address</p>
-                      <div className="text-gray-900">
-                        {doctorProfile?.address ? (
-                          <div className="flex flex-wrap gap-4">
-                           {doctorProfile.address.addressLine1 || 'Address line 1 not set'}
-                           {doctorProfile.address.addressLine2 ? `, ${doctorProfile.address.addressLine2}` : ''}
+                    <div className="flex items-start space-x-3">
+                      <MapPin className="h-5 w-5 text-gray-500 mt-1" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">
+                          Address
+                        </p>
+                        <div className="text-gray-900">
+                          {doctorProfile?.address ? (
+                            <div className="flex flex-wrap gap-4">
+                              {doctorProfile.address.addressLine1 ||
+                                "Address line 1 not set"}
+                              {doctorProfile.address.addressLine2
+                                ? `, ${doctorProfile.address.addressLine2}`
+                                : ""}
                             </div>
-                            ) : (
+                          ) : (
                             <p>Address not set</p>
-                            )}
-                            </div>
-                            </div>
-                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -532,7 +550,9 @@ const ProfileView = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Total Payment</p>
-                      <p className="text-2xl font-bold">NPR {doctorProfile?.totalPayment || 0}</p>
+                      <p className="text-2xl font-bold">
+                        NPR {doctorProfile?.totalPayment || 0}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -541,21 +561,27 @@ const ProfileView = () => {
                     <FileText className="h-8 w-8 text-medical-primary mr-3" />
                     <div>
                       <p className="text-sm text-gray-500">Total Patients</p>
-                      <p className="text-2xl font-bold">{doctorProfile?.totalUniquePatients || 0}</p>
+                      <p className="text-2xl font-bold">
+                        {doctorProfile?.totalUniquePatients || 0}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-4 flex items-center">
                     <div className="h-8 w-8 rounded-full bg-medical-primary text-white flex items-center justify-center mr-3 font-bold">
-                      {doctorProfile?.averageRating || '0'}
+                      {doctorProfile?.averageRating || "0"}
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Rating</p>
                       <div className="flex text-yellow-400">
-                        {'★'.repeat(Math.floor(doctorProfile?.averageRating || 0))}
-                        {doctorProfile?.averageRating % 1 !== 0 && '☆'}
-                        {'☆'.repeat(5 - Math.ceil(doctorProfile?.averageRating || 0))}
+                        {"★".repeat(
+                          Math.floor(doctorProfile?.averageRating || 0),
+                        )}
+                        {doctorProfile?.averageRating % 1 !== 0 && "☆"}
+                        {"☆".repeat(
+                          5 - Math.ceil(doctorProfile?.averageRating || 0),
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -570,23 +596,34 @@ const ProfileView = () => {
                 <CardContent>
                   <div className="space-y-4">
                     {!doctorProfile?.recentFeedbacks?.length ? (
-                      <p className="text-center text-gray-500">No feedback yet</p>
+                      <p className="text-center text-gray-500">
+                        No feedback yet
+                      </p>
                     ) : (
                       doctorProfile.recentFeedbacks.map((feedback, index) => (
-                        <div key={index} className="border-b pb-3 last:border-0 last:pb-0">
+                        <div
+                          key={index}
+                          className="border-b pb-3 last:border-0 last:pb-0"
+                        >
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="flex items-center gap-2">
-                                <p className="font-medium">{feedback.userName}</p>
+                                <p className="font-medium">
+                                  {feedback.userName}
+                                </p>
                                 <span className="text-xs text-gray-400">
-                                  {new Date(feedback.createdAt).toLocaleDateString()}
+                                  {new Date(
+                                    feedback.createdAt,
+                                  ).toLocaleDateString()}
                                 </span>
                               </div>
-                              <p className="text-sm text-gray-600 mt-1">{feedback.comment}</p>
+                              <p className="text-sm text-gray-600 mt-1">
+                                {feedback.comment}
+                              </p>
                             </div>
                             <div className="flex text-yellow-400">
-                              {'★'.repeat(feedback.rating)}
-                              {'☆'.repeat(5 - feedback.rating)}
+                              {"★".repeat(feedback.rating)}
+                              {"☆".repeat(5 - feedback.rating)}
                             </div>
                           </div>
                         </div>

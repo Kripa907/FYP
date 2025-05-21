@@ -141,52 +141,52 @@ const MedicalRecordsDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
+  const fetchRecords = async () => {
+    try {
+      console.log('Fetching medical records...');
+      console.log('Using backend URL:', backendUrl);
+      console.log('Using token:', dToken ? 'Token exists' : 'No token');
+      
+      setLoading(true);
+      const response = await axios.get(`${backendUrl}/api/medical-records`, {
+        headers: { 'Authorization': dToken }
+      });
+      
+      console.log('Received response:', response.data);
+      
+      if (response.data.success) {
+        const formatted = response.data.records.map((rec) => ({
+          id: rec._id,
+          patient: rec.patient?.name || 'Unknown Patient',
+          recordType: rec.recordType,
+          type: rec.recordType,
+          date: rec.date ? new Date(rec.date).toISOString().split('T')[0] : '',
+          formattedDate: rec.date ? new Date(rec.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : '',
+          appointmentDate: rec.appointment?.slotDate,
+          appointmentTime: rec.appointment?.slotTime,
+          notes: rec.notes,
+          attachmentUrl: rec.attachmentUrl,
+          status: rec.status
+        }));
+        setAllRecords(formatted);
+      } else {
+        toast.error(response.data.message || 'Failed to fetch medical records');
+      }
+    } catch (error) {
+      console.error('Error fetching medical records:', error);
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again');
+        navigate('/login');
+      } else {
+        toast.error(error.response?.data?.message || 'Error fetching medical records');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Fetch all records on mount
   useEffect(() => {
-    const fetchRecords = async () => {
-      try {
-        console.log('Fetching medical records...');
-        console.log('Using backend URL:', backendUrl);
-        console.log('Using token:', dToken ? 'Token exists' : 'No token');
-        
-        setLoading(true);
-        const response = await axios.get(`${backendUrl}/api/doctor/medical-records`, {
-          headers: { 'Authorization': dToken }
-        });
-        
-        console.log('Received response:', response.data);
-        
-        if (response.data.success) {
-          const formatted = response.data.records.map((rec) => ({
-            id: rec._id,
-            patient: rec.patient?.name || 'Unknown Patient',
-            recordType: rec.recordType,
-            type: rec.recordType,
-            date: rec.date ? new Date(rec.date).toISOString().split('T')[0] : '',
-            formattedDate: rec.date ? new Date(rec.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : '',
-            appointmentDate: rec.appointment?.slotDate,
-            appointmentTime: rec.appointment?.slotTime,
-            notes: rec.notes,
-            attachmentUrl: rec.attachmentUrl,
-            status: rec.status
-          }));
-          setAllRecords(formatted);
-        } else {
-          toast.error(response.data.message || 'Failed to fetch medical records');
-        }
-      } catch (error) {
-        console.error('Error fetching medical records:', error);
-        if (error.response?.status === 401) {
-          toast.error('Session expired. Please login again');
-          navigate('/login');
-        } else {
-          toast.error(error.response?.data?.message || 'Error fetching medical records');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (dToken) {
       fetchRecords();
     } else {
@@ -198,7 +198,7 @@ const MedicalRecordsDashboard = () => {
   const handleUpdateRecord = async (updatedRecord) => {
     try {
       console.log('Updating record:', updatedRecord);
-      const response = await axios.put(`${backendUrl}/api/doctor/medical-records/${updatedRecord.id}`, updatedRecord, {
+      const response = await axios.put(`${backendUrl}/api/medical-records/${updatedRecord.id}`, updatedRecord, {
         headers: { 'Authorization': dToken }
       });
       
@@ -224,7 +224,7 @@ const MedicalRecordsDashboard = () => {
   const handleDeleteRecord = async (recordId) => {
     try {
       console.log('Deleting record:', recordId);
-      const response = await axios.delete(`${backendUrl}/api/doctor/medical-records/${recordId}`, {
+      const response = await axios.delete(`${backendUrl}/api/medical-records/${recordId}`, {
         headers: { 'Authorization': dToken }
       });
       
