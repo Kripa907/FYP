@@ -179,12 +179,17 @@ doctorRouter.get('/patient-list', authDoctor, async (req, res) => {
       if (appointment.user) {
         const patientId = appointment.user._id.toString();
         if (!patientsMap.has(patientId)) {
+          const [day, month, year] = appointment.slotDate.split('_');
+          const currentAppointmentDate = new Date(`${year}-${month}-${day}`);
+          const lastAppointmentDate = new Date(currentAppointmentDate);
+          lastAppointmentDate.setDate(currentAppointmentDate.getDate() + 1);
+          lastAppointmentDate.setHours(0, 0, 0, 0);
           patientsMap.set(patientId, {
             _id: appointment.user._id,
             name: appointment.user.name,
             email: appointment.user.email,
             phone: appointment.user.phone,
-            lastAppointment: appointment.slotDate,
+            lastAppointment: `${year}-${month}-${day}`,
             totalAppointments: 1,
             appointmentHistory: [{
               date: appointment.slotDate,
@@ -201,8 +206,12 @@ doctorRouter.get('/patient-list', authDoctor, async (req, res) => {
             type: appointment.type || 'Regular'
           });
           // Update last appointment if this one is more recent
-          if (new Date(appointment.slotDate) > new Date(patient.lastAppointment)) {
-            patient.lastAppointment = appointment.slotDate;
+          const [day, month, year] = appointment.slotDate.split('_');
+          const currentAppointmentDate = new Date(`${year}-${month}-${day}`);
+          const lastAppointmentDate = new Date(patient.lastAppointment);
+
+          if (currentAppointmentDate > lastAppointmentDate) {
+            patient.lastAppointment = `${year}-${month}-${day}`;
           }
         }
       }

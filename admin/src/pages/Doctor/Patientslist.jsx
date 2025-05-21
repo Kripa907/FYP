@@ -215,7 +215,9 @@ const PatientsList = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
-                            {new Date(patient.lastAppointment).toLocaleDateString()}
+                            {new Date(patient.lastAppointment).toString() === 'Invalid Date'
+                              ? new Date().toLocaleDateString()
+                              : new Date(patient.lastAppointment).toLocaleDateString()}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
