@@ -135,7 +135,7 @@ const Appointment = () => {
 
       if (response.data.success) {
         toast.success('Appointment requested successfully');
-        navigate('/my-appointments');
+        navigate('/appointments');
       } else {
         toast.error(response.data.message || 'Failed to book appointment');
       }

@@ -139,7 +139,12 @@ const MyAppointments = () => {
                 const { data } = await axios.post(
                     `${backendUrl}/api/user/cancel-appointment`,
                     { appointmentId },
-                    { headers: { token } }
+                    { 
+                        headers: { 
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        } 
+                    }
                 );
 
                 if (data.success) {
@@ -168,7 +173,12 @@ const MyAppointments = () => {
                 const { data } = await axios.post(
                     `${backendUrl}/api/user/cancel-requested-appointment`,
                     { appointmentId },
-                    { headers: { token } }
+                    { 
+                        headers: { 
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        } 
+                    }
                 );
 
                 if (data.success) {
