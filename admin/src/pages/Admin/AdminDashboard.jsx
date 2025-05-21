@@ -142,8 +142,8 @@ const AdminDashboard = () => {
           id: doc._id,
           name: doc.name,
           email: doc.email,
-          specialty: doc.specialty || "General",
-          image: doc.image || "https://via.placeholder.com/150", // Add default image
+          specialty: doc.speciality || doc.specialty || "Not specified",
+          image: doc.image || "https://via.placeholder.com/150",
         }));
         setDoctors(formattedDoctors);
       } else {
@@ -283,6 +283,7 @@ const AdminDashboard = () => {
                   <option value="rejected">Rejected</option>
                   <option value="cancelled">Cancelled</option>
                   <option value="pending">Pending</option>
+                  <option value="completed">Completed</option>
                 </select>
               </div>
             </div>
@@ -296,7 +297,6 @@ const AdminDashboard = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -318,30 +318,6 @@ const AdminDashboard = () => {
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(appointment.status)}`}>
                         {appointment.status}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {appointment.status === 'Pending' && (
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleApprove(appointment.id)}
-                            disabled={actionLoading[appointment.id]}
-                            className={`px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm ${
-                              actionLoading[appointment.id] ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                          >
-                            {actionLoading[appointment.id] ? 'Processing...' : 'Approve'}
-                          </button>
-                          <button
-                            onClick={() => handleReject(appointment.id)}
-                            disabled={actionLoading[appointment.id]}
-                            className={`px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm ${
-                              actionLoading[appointment.id] ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                          >
-                            {actionLoading[appointment.id] ? 'Processing...' : 'Reject'}
-                          </button>
-                        </div>
-                      )}
                     </td>
                   </tr>
                 ))}
