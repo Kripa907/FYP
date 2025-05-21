@@ -752,21 +752,21 @@ const applyDoctor = async (req, res) => {
       console.log('Uploading certificate to Cloudinary');
       console.log('Cloudinary config before certificate upload:', cloudinary.config());
       const cert = req.files.certificate[0];
-      console.log('Certificate file details:', { fieldname: cert.fieldname, originalname: cert.originalname, size: cert.size, path: cert.path });
-      const certResult = await cloudinary.uploader.upload(cert.path, {
-        folder: 'doctor_certificates',
-        resource_type: 'auto'
+      console.log('Certificate file details:', { fieldname: cert.fieldname, originalname: cert.originalname, size: cert.size });
+      const certResult = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream({
+          folder: 'doctor_certificates',
+          resource_type: 'auto'
+        }, (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        });
+        uploadStream.end(cert.buffer);
       });
       certificateUrl = certResult.secure_url;
-      // Delete temporary file
-      fs.unlinkSync(cert.path);
       console.log('Certificate uploaded successfully:', certificateUrl);
     } catch (error) {
       console.error('Error uploading certificate:', error);
-      // Clean up temporary file if it exists
-      if (req.files?.certificate?.[0]?.path && fs.existsSync(req.files.certificate[0].path)) {
-        fs.unlinkSync(req.files.certificate[0].path);
-      }
       return res.status(500).json({ message: 'Error uploading certificate: ' + error.message });
     }
 
@@ -776,21 +776,21 @@ const applyDoctor = async (req, res) => {
       console.log('Uploading license to Cloudinary');
       console.log('Cloudinary config before license upload:', cloudinary.config());
       const license = req.files.license[0];
-      console.log('License file details:', { fieldname: license.fieldname, originalname: license.originalname, size: license.size, path: license.path });
-       const licenseResult = await cloudinary.uploader.upload(license.path, {
-        folder: 'doctor_licenses',
-        resource_type: 'auto'
+      console.log('License file details:', { fieldname: license.fieldname, originalname: license.originalname, size: license.size });
+      const licenseResult = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream({
+          folder: 'doctor_licenses',
+          resource_type: 'auto'
+        }, (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        });
+        uploadStream.end(license.buffer);
       });
       licenseUrl = licenseResult.secure_url;
-      // Delete temporary file
-      fs.unlinkSync(license.path);
       console.log('License uploaded successfully:', licenseUrl);
     } catch (error) {
       console.error('Error uploading license:', error);
-       // Clean up temporary file if it exists
-      if (req.files?.license?.[0]?.path && fs.existsSync(req.files.license[0].path)) {
-        fs.unlinkSync(req.files.license[0].path);
-      }
       return res.status(500).json({ message: 'Error uploading license: ' + error.message });
     }
 
@@ -799,6 +799,7 @@ const applyDoctor = async (req, res) => {
 
     // Save doctor to the database
     console.log('Saving doctor to database');
+    const DEFAULT_DOCTOR_IMAGE = "https://ui-avatars.com/api/?name=Doctor&background=0D8ABC&color=fff";
     const newDoctor = new doctorModel({
       name,
       email,
@@ -813,6 +814,7 @@ const applyDoctor = async (req, res) => {
       certification: certificateUrl,
       license: licenseUrl,
       date: new Date().toISOString(),
+      image: DEFAULT_DOCTOR_IMAGE,
     });
 
     await newDoctor.save();
