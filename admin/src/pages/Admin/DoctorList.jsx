@@ -63,6 +63,9 @@ const DoctorList = () => {
     }
   }, [aToken])
 
+  // Filter out pending doctors
+  const approvedDoctors = doctors.filter(doctor => doctor.status !== 'pending')
+
   const handleEditClick = (doctor) => {
     setCurrentDoctor(doctor)
     // Split location for editing if available
@@ -136,8 +139,8 @@ const DoctorList = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {doctors.map((doctor, index) => (
-              <tr key={index} className="hover:bg-gray-50">
+            {approvedDoctors.map((doctor, index) => (
+              <tr key={doctor._id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10">
@@ -171,6 +174,13 @@ const DoctorList = () => {
                 </td>
               </tr>
             ))}
+            {approvedDoctors.length === 0 && (
+              <tr>
+                <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
+                  No approved doctors found
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -214,6 +224,7 @@ const DoctorList = () => {
                   className="mt-1 block w-full border border-gray-300 rounded-md p-2"
                 />
               </div>
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700">Address Line 2</label>
                 <input
@@ -225,19 +236,19 @@ const DoctorList = () => {
                 />
               </div>
             </div>
-            
+
             <div className="mt-6 flex justify-end space-x-3">
               <button
                 onClick={() => setEditModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium"
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveChanges}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
-                Save changes
+                Save Changes
               </button>
             </div>
           </div>
@@ -248,21 +259,20 @@ const DoctorList = () => {
       {deleteModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-2">Are you absolutely sure?</h2>
+            <h2 className="text-xl font-semibold mb-4">Confirm Delete</h2>
             <p className="text-gray-600 mb-6">
-              This action will permanently delete {currentDoctor?.name}'s record. This action cannot be undone.
+              Are you sure you want to delete {currentDoctor?.name}? This action cannot be undone.
             </p>
-            
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setDeleteModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium"
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
               >
                 Delete
               </button>
