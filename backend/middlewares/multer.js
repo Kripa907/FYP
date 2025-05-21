@@ -5,16 +5,8 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configure multer to use disk storage
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../uploads/'));
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configure multer to use memory storage
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   // Check file type
@@ -23,11 +15,7 @@ const fileFilter = (req, file, cb) => {
     return cb(new Error('Invalid file type. Only JPEG, PNG, PDF, and DOC files are allowed.'), false);
   }
   
-  // Check file size (10MB limit)
-  const maxSize = 10 * 1024 * 1024; // 10MB in bytes
-  if (parseInt(req.headers['content-length']) > maxSize) {
-    return cb(new Error('File size too large. Maximum size is 10MB.'), false);
-  }
+  // Note: Size check for memory storage happens in the limits option
   
   cb(null, true);
 };

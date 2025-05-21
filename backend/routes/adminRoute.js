@@ -28,6 +28,34 @@ adminRouter.post("/login", loginAdmin);
 // Add doctor (Protected Route)
 adminRouter.post("/add-doctor", authAdmin, upload.fields([{ name: "image", maxCount: 1 }]), async (req, res) => {
   try {
+    console.log('Received request body:', req.body);
+    console.log('Received files:', req.files);
+
+    // Add this check to see if the image file exists and its size after multer
+    if (req.files && req.files.image && req.files.image[0]) {
+      console.log('Multer processed image file details:', {
+        fieldname: req.files.image[0].fieldname,
+        originalname: req.files.image[0].originalname,
+        encoding: req.files.image[0].encoding,
+        mimetype: req.files.image[0].mimetype,
+        size: req.files.image[0].size,
+        destination: req.files.image[0].destination,
+        filename: req.files.image[0].filename,
+        path: req.files.image[0].path
+      });
+
+      if (req.files.image[0].size === 0) {
+        console.error('Multer processed file is empty!');
+        // Consider returning an error here directly if the file is empty
+        // return res.status(400).json({
+        //   success: false,
+        //   message: 'Error: Uploaded image file is empty.'
+        // });
+      }
+    } else {
+      console.log('No image file received by multer or file is missing.');
+    }
+
     const { 
       name, 
       email, 
@@ -40,48 +68,93 @@ adminRouter.post("/add-doctor", authAdmin, upload.fields([{ name: "image", maxCo
       address,
       licenseNumber 
     } = req.body;
-    let imageUrl = '';
+
+    // Log all received fields
+    console.log('Parsed fields:', {
+      name, email, speciality, degree, experience, about, fees, address, licenseNumber
+    });
 
     // Validate required fields
-    if (!name || !email || !password || !speciality || !degree || !experience || !about || !fees || !licenseNumber) {
+    const requiredFields = ['name', 'email', 'password', 'speciality', 'degree', 'experience', 'about', 'fees', 'licenseNumber'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+    
+    if (missingFields.length > 0) {
+      console.log('Missing required fields:', missingFields);
       return res.status(400).json({ 
         success: false, 
-        message: "All fields are required including license number" 
+        message: `Missing required fields: ${missingFields.join(', ')}` 
       });
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email format'
+      });
+    }
+
+    // Validate fees is a positive number
+    const feesNumber = Number(fees);
+    if (isNaN(feesNumber) || feesNumber <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Fees must be a positive number'
+      });
+    }
+
+    let imageUrl = '';
     // Upload image to Cloudinary if provided
-    if (req.files && req.files.image) {
+    if (req.files && req.files.image && req.files.image[0]) {
       try {
+        console.log('Starting image upload to Cloudinary');
         const image = req.files.image[0];
+        console.log('Image details:', {
+          originalname: image.originalname,
+          mimetype: image.mimetype,
+          size: image.size
+        });
+
+        // Use the buffer from memory storage for Cloudinary upload
         const uploadResult = await new Promise((resolve, reject) => {
           const uploadStream = cloudinary.uploader.upload_stream({
             folder: 'doctor_photos',
             resource_type: 'auto'
           }, (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
+            if (error) {
+              console.error('Cloudinary upload error:', error);
+              reject(error);
+            } else {
+              console.log('Cloudinary upload successful:', result);
+              resolve(result);
+            }
           });
-          uploadStream.end(image.buffer);
+          uploadStream.end(image.buffer); // Use image.buffer here
         });
         imageUrl = uploadResult.secure_url;
       } catch (error) {
-        console.error('Error uploading image:', error);
+        console.error('Error uploading image to Cloudinary:', error);
         return res.status(500).json({ 
           success: false, 
-          message: "Error uploading image" 
+          message: "Error uploading image: " + error.message 
         });
       }
+    } else {
+      console.log('No image file provided');
     }
 
     // Parse address if it's a string, otherwise use as is
     let parsedAddress = {};
     try {
       if (typeof address === 'string') {
+        console.log('Parsing address string:', address);
         parsedAddress = JSON.parse(address);
       } else if (typeof address === 'object' && address !== null) {
+        console.log('Using address object:', address);
         parsedAddress = address;
       } else {
+        console.log('No valid address provided, using empty address');
         parsedAddress = { addressLine1: '', addressLine2: '' };
       }
     } catch (error) {
@@ -97,6 +170,19 @@ adminRouter.post("/add-doctor", authAdmin, upload.fields([{ name: "image", maxCo
       parsedAddress.addressLine2 = '';
     }
 
+    console.log('Creating new doctor with data:', {
+      name,
+      email,
+      speciality,
+      degree,
+      experience,
+      about,
+      fees: feesNumber,
+      address: parsedAddress,
+      image: imageUrl,
+      licenseNumber
+    });
+
     // Create new doctor with Cloudinary URL
     const newDoctor = new doctorModel({
       name,
@@ -106,25 +192,47 @@ adminRouter.post("/add-doctor", authAdmin, upload.fields([{ name: "image", maxCo
       degree,
       experience,
       about,
-      fees: Number(fees),
+      fees: feesNumber,
       address: parsedAddress,
       image: imageUrl,
       date: new Date().toISOString(),
       certification: imageUrl, // Using the same image as certification for admin-added doctors
       approved: true, // Auto-approve doctors added by admin
-      licenseNumber // Add the license number
+      licenseNumber
     });
 
     await newDoctor.save();
+    console.log('Doctor saved successfully');
+    
     res.status(201).json({ 
       success: true, 
       message: "Doctor added successfully!" 
     });
   } catch (error) {
     console.error("Error adding doctor:", error);
+    
+    // Handle specific MongoDB errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already exists"
+      });
+    }
+
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        errors: validationErrors
+      });
+    }
+
     res.status(500).json({ 
       success: false, 
-      message: error.message || "Internal Server Error!" 
+      message: error.message || "Internal Server Error!",
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
