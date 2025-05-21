@@ -306,13 +306,25 @@ doctorRouter.get('/profile', authDoctor, async (req, res) => {
     }
 
     // Get additional statistics
-    console.log('appointmentModel in /profile route:', mongoose.model('appointment'));
     const totalAppointments = await mongoose.model('appointment').countDocuments({ doctor: req.doctor._id });
     const totalPatients = await mongoose.model('appointment').distinct('user', { doctor: req.doctor._id }).length;
-    const averageRating = await Feedback.aggregate([
-      { $match: { doctor: req.doctor._id } },
-      { $group: { _id: null, avgRating: { $avg: '$rating' } } }
-    ]);
+    
+    // Get feedback and ratings
+    const feedback = await Feedback.find({ doctor: req.doctor._id })
+      .populate('user', 'name')
+      .sort({ createdAt: -1 })
+      .limit(5); // Get only 5 most recent feedbacks
+
+    const totalRatings = feedback.length;
+    const averageRating = totalRatings > 0 
+      ? feedback.reduce((acc, curr) => acc + curr.rating, 0) / totalRatings 
+      : 0;
+
+    // Map feedbacks to include user names
+    const mappedFeedbacks = feedback.map(fb => ({
+      ...fb.toObject(),
+      userName: fb.userName || (fb.user && fb.user.name) || 'Anonymous'
+    }));
 
     res.json({
       success: true,
@@ -321,8 +333,10 @@ doctorRouter.get('/profile', authDoctor, async (req, res) => {
         statistics: {
           totalAppointments,
           totalPatients,
-          averageRating: averageRating[0]?.avgRating || 0
-        }
+          averageRating: Number(averageRating.toFixed(1)),
+          totalRatings
+        },
+        recentFeedbacks: mappedFeedbacks
       }
     });
   } catch (error) {

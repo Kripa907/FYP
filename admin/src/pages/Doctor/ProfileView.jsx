@@ -366,6 +366,7 @@ const ProfileView = () => {
   const [doctorProfile, setDoctorProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [totalPatientsCount, setTotalPatientsCount] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -376,7 +377,32 @@ const ProfileView = () => {
         });
 
         if (response.data.success) {
-          setDoctorProfile(response.data.doctor);
+          console.log("Data before setting doctorProfile state:", response.data.doctor);
+          const fetchedDoctorData = response.data.doctor;
+
+          // Create a copy of statistics to ensure immutability before accessing nested properties
+          const statisticsData = { ...fetchedDoctorData.statistics };
+
+          // Update both the main doctorProfile state and the separate totalPatientsCount state
+          setDoctorProfile({
+            ...fetchedDoctorData,
+            statistics: statisticsData || {},
+            recentFeedbacks: fetchedDoctorData.recentFeedbacks || []
+          });
+
+          // Use the copied statisticsData to set the totalPatientsCount state
+          if (statisticsData?.totalPatients !== undefined) {
+            console.log("Content of fetchedDoctorData.statistics:", fetchedDoctorData.statistics);
+            console.log("Value of fetchedDoctorData.statistics?.totalPatients before condition:", fetchedDoctorData.statistics?.totalPatients);
+            setTotalPatientsCount(statisticsData.totalPatients);
+            console.log("totalPatientsCount state set to:", statisticsData.totalPatients);
+          } else {
+            setTotalPatientsCount(0); // Set to 0 if totalPatients is unexpectedly undefined
+            console.log("totalPatientsCount state set to 0 (undefined data)");
+          }
+
+          console.log("State value immediately after setDoctorProfile:", doctorProfile?.statistics?.totalPatients);
+          console.log("Doctor profile data fetched:", response.data.doctor);
         } else {
           toast.error(response.data.message || "Failed to fetch profile");
         }
@@ -403,6 +429,13 @@ const ProfileView = () => {
     }
   }, [backendUrl, dToken, navigate]);
 
+  // Effect to monitor doctorProfile changes and log totalPatients
+  useEffect(() => {
+    if (doctorProfile) {
+      console.log("doctorProfile state updated. Total Patients:", doctorProfile.statistics?.totalPatients);
+    }
+  }, [doctorProfile]);
+
   const handleProfileUpdate = async (updatedData) => {
     try {
       const response = await axios.put(
@@ -424,6 +457,8 @@ const ProfileView = () => {
       toast.error(error.response?.data?.message || "Failed to update profile");
     }
   };
+
+  console.log("Total Patients value:", doctorProfile?.statistics?.totalPatients);
 
   if (isLoading) {
     return (
@@ -562,7 +597,7 @@ const ProfileView = () => {
                     <div>
                       <p className="text-sm text-gray-500">Total Patients</p>
                       <p className="text-2xl font-bold">
-                        {doctorProfile?.totalUniquePatients || 0}
+                        {totalPatientsCount}
                       </p>
                     </div>
                   </CardContent>
@@ -570,17 +605,17 @@ const ProfileView = () => {
                 <Card>
                   <CardContent className="p-4 flex items-center">
                     <div className="h-8 w-8 rounded-full bg-medical-primary text-white flex items-center justify-center mr-3 font-bold">
-                      {doctorProfile?.averageRating || "0"}
+                      {doctorProfile?.statistics?.averageRating || "0"}
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Rating</p>
+                      <p className="text-sm text-gray-500">Rating ({doctorProfile?.statistics?.totalRatings || 0})</p>
                       <div className="flex text-yellow-400">
                         {"★".repeat(
-                          Math.floor(doctorProfile?.averageRating || 0),
+                          Math.floor(doctorProfile?.statistics?.averageRating || 0),
                         )}
-                        {doctorProfile?.averageRating % 1 !== 0 && "☆"}
+                        {doctorProfile?.statistics?.averageRating % 1 !== 0 && doctorProfile?.statistics?.averageRating > 0 && "☆"}
                         {"☆".repeat(
-                          5 - Math.ceil(doctorProfile?.averageRating || 0),
+                          5 - Math.ceil(doctorProfile?.statistics?.averageRating || 0),
                         )}
                       </div>
                     </div>
