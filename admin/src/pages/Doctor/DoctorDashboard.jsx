@@ -116,6 +116,64 @@ const DoctorDashboard = () => {
     }
   };
 
+  const handleComplete = async (appointmentId) => {
+    try {
+      setActionLoading(prev => ({ ...prev, [appointmentId]: true }));
+      if (!dToken) {
+        toast.error("Please login again");
+        return;
+      }
+      const response = await axios.patch(
+        `${backendUrl}/api/doctor/appointments/${appointmentId}/complete`,
+        {},
+        { headers: { 'Authorization': dToken } }
+      );
+      if (response.data.success) {
+        toast.success('Appointment marked as completed');
+        fetchData(); // Refresh the appointments list
+      }
+    } catch (error) {
+      console.error('Error completing appointment:', error);
+      if (error.response?.status === 401) {
+        localStorage.removeItem('dToken');
+        window.location.href = '/login';
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to complete appointment');
+      }
+    } finally {
+      setActionLoading(prev => ({ ...prev, [appointmentId]: false }));
+    }
+  };
+
+  const handleCancel = async (appointmentId) => {
+    try {
+      setActionLoading(prev => ({ ...prev, [appointmentId]: true }));
+      if (!dToken) {
+        toast.error("Please login again");
+        return;
+      }
+      const response = await axios.patch(
+        `${backendUrl}/api/doctor/appointments/${appointmentId}/cancel`,
+        {},
+        { headers: { 'Authorization': dToken } }
+      );
+      if (response.data.success) {
+        toast.success('Appointment cancelled successfully');
+        fetchData(); // Refresh the appointments list
+      }
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      if (error.response?.status === 401) {
+        localStorage.removeItem('dToken');
+        window.location.href = '/login';
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to cancel appointment');
+      }
+    } finally {
+      setActionLoading(prev => ({ ...prev, [appointmentId]: false }));
+    }
+  };
+
   const pendingAppointments = appointments.filter(apt => apt.status === 'Pending');
 
   return (
@@ -152,6 +210,76 @@ const DoctorDashboard = () => {
               <h2 className="text-lg font-semibold text-medical-primary mb-2">Rating</h2>
               <div className="text-3xl font-bold">{dashboardData?.averageRating || '0'}</div>
               <p className="text-gray-500 text-sm">Based on patient feedback</p>
+            </div>
+          </div>
+
+          {/* Today's Appointments Section */}
+          <div className="bg-white rounded-lg shadow mb-6">
+            <div className="p-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-medical-primary">Today's Appointments</h2>
+              <p className="text-sm text-gray-500">View and manage your appointments for today</p>
+            </div>
+            <div className="p-4">
+              {loading ? (
+                <div className="text-center py-4">Loading appointments...</div>
+              ) : appointments.filter(apt => {
+                const today = new Date();
+                const formattedToday = `${String(today.getDate()).padStart(2, '0')}_${String(today.getMonth() + 1).padStart(2, '0')}_${today.getFullYear()}`;
+                return apt.slotDate === formattedToday && apt.status === 'Confirmed';
+              }).length === 0 ? (
+                <div className="text-center py-4 text-gray-500">No appointments scheduled for today</div>
+              ) : (
+                <div className="space-y-4">
+                  {appointments
+                    .filter(apt => {
+                      const today = new Date();
+                      const formattedToday = `${String(today.getDate()).padStart(2, '0')}_${String(today.getMonth() + 1).padStart(2, '0')}_${today.getFullYear()}`;
+                      return apt.slotDate === formattedToday && apt.status === 'Confirmed';
+                    })
+                    .sort((a, b) => a.slotTime.localeCompare(b.slotTime))
+                    .map((appointment) => (
+                      <div 
+                        key={appointment._id}
+                        className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-medium text-lg">
+                              {appointment.user?.name || 'Patient'}
+                            </h3>
+                            <p className="text-gray-600">
+                              Time: {appointment.slotTime}
+                            </p>
+                            <div className="mt-2 space-y-1 text-sm text-gray-500">
+                              <p>Email: {appointment.user?.email}</p>
+                              <p>Reason: {appointment.reason || 'General Consultation'}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleComplete(appointment._id)}
+                              disabled={actionLoading[appointment._id]}
+                              className={`px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors ${
+                                actionLoading[appointment._id] ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
+                            >
+                              {actionLoading[appointment._id] ? 'Processing...' : 'Complete'}
+                            </button>
+                            <button
+                              onClick={() => handleCancel(appointment._id)}
+                              disabled={actionLoading[appointment._id]}
+                              className={`px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors ${
+                                actionLoading[appointment._id] ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
+                            >
+                              {actionLoading[appointment._id] ? 'Processing...' : 'Cancel'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
             </div>
           </div>
 
