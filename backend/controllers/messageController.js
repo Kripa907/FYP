@@ -96,7 +96,11 @@ export const sendMessage = async (req, res) => {
     // Emit message to Socket.IO room if io is available
     const io = req.app.get('io');
     if (io) {
-      const roomId = `chat-${isDoctor ? doctorId : userId}-${isDoctor ? req.body.userId : req.body.doctorId}`;
+      // Construct roomId consistently by sorting participant IDs
+      const participant1Id = isDoctor ? doctorId : userId;
+      const participant2Id = isDoctor ? req.body.userId : req.body.doctorId;
+      const sortedIds = [participant1Id, participant2Id].sort();
+      const roomId = `chat-${sortedIds[0]}-${sortedIds[1]}`;
       io.to(roomId).emit('chat-message', { message });
     }
 
@@ -253,37 +257,32 @@ export const getUserChatList = async (req, res) => {
 export const getDoctorChatList = async (req, res) => {
   try {
     const doctorId = req.doctor._id;
-    
-    // Get all appointments for the doctor
-    const appointments = await appointmentModel.find({ doctor: doctorId })
-      .populate('user', 'name email')
-      .sort({ createdAt: -1 });
 
-    // Create a map to store unique patients
-    const patientMap = new Map();
+    // Find all unique patients who have had appointments with this doctor
+    const appointments = await appointmentModel.find({ doctor: doctorId }).populate('user');
 
-    // Process appointments to get unique patients
+    const patientsMap = new Map();
+
     appointments.forEach(appointment => {
       if (appointment.user) {
-        const patientId = appointment.user._id.toString();
-        if (!patientMap.has(patientId)) {
-          patientMap.set(patientId, {
-            _id: appointment.user._id,
-            name: appointment.user.name,
-            email: appointment.user.email,
-            lastAppointment: appointment.slotDate
-          });
-        }
+        patientsMap.set(appointment.user._id.toString(), appointment.user);
       }
     });
 
-    // Convert map to array
-    const patients = Array.from(patientMap.values());
+    const patients = Array.from(patientsMap.values());
 
-    res.json({
-      success: true,
-      patients
-    });
+    // Get the online users map from the io instance
+    const io = req.app.get('io');
+    const onlineUsers = io.onlineUsers || {};
+
+    // Add online status to each patient
+    const patientsWithStatus = patients.map(patient => ({
+      ...patient.toObject(), // Convert Mongoose document to plain object
+      isOnline: !!onlineUsers[patient._id.toString()]
+    }));
+
+    res.json({ success: true, patients: patientsWithStatus });
+
   } catch (error) {
     console.error('Error fetching doctor chat list:', error);
     res.status(500).json({

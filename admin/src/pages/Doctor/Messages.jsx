@@ -37,15 +37,73 @@ const Messages = () => {
 
   useEffect(() => {
     socketRef.current = io('http://localhost:4001');
-    
+    console.log('Socket initialized in Doctor Messages');
+
+    socketRef.current.on('connect', () => {
+      console.log('Socket connected in Doctor Messages', socketRef.current.id);
+    });
+
+    socketRef.current.on('disconnect', (reason) => {
+      console.log('Socket disconnected in Doctor Messages', reason);
+    });
+
+    socketRef.current.on('error', (error) => {
+      console.error('Socket error in Doctor Messages', error);
+    });
+
     if (selectedPatient) {
-      const roomId = `chat-${localStorage.getItem('doctorId')}-${selectedPatient._id}`;
+      // Construct roomId consistently by sorting participant IDs
+      const doctorId = localStorage.getItem('doctorId'); // Assuming doctorId is stored here
+      const patientId = selectedPatient._id;
+      const sortedIds = [doctorId, patientId].sort();
+      const roomId = `chat-${sortedIds[0]}-${sortedIds[1]}`;
       socketRef.current.emit('join-chat-room', { roomId });
     }
 
     socketRef.current.on('chat-message', (data) => {
-      setMessages(prev => [...prev, data.message]);
+      console.log('Received chat-message:', data);
+      const receivedMessage = data.message;
+      const doctorId = localStorage.getItem('doctorId'); // Assuming doctorId is stored here
+
+      console.log('Checking message for selected patient:', selectedPatient, 'and doctorId:', doctorId);
+      console.log('Received message details:', { sender: receivedMessage.sender, recipient: receivedMessage.recipient, _id: receivedMessage._id });
+
+      // Check if the received message belongs to the currently selected conversation
+      if (selectedPatient && (
+          (receivedMessage.sender === selectedPatient._id && receivedMessage.recipient === doctorId) ||
+          (receivedMessage.sender === doctorId && receivedMessage.recipient === selectedPatient._id)
+      )) {
+          console.log('Message belongs to selected conversation, updating state.');
+          setMessages(prev => {
+              // Prevent duplicate messages
+              if (!prev.some(msg => msg._id === receivedMessage._id)) {
+                console.log('Adding new message to state:', receivedMessage);
+                  return [...prev, receivedMessage];
+              } else {
+                console.log('Message already exists in state, not adding.');
+              }
+              return prev;
+          });
+      } else {
+        console.log('Message does not belong to selected conversation.');
+      }
     });
+
+    // Listen for user status changes
+    socketRef.current.on('user-status-change', ({ userId, isOnline }) => {
+      setPatients(prevPatients =>
+        prevPatients.map(patient =>
+          patient._id === userId ? { ...patient, isOnline } : patient
+        )
+      );
+    });
+
+    // Emit user-connected event for the doctor when the component mounts
+    // Assuming the doctor's user ID is available (e.g., from context or local storage)
+    const doctorUserId = localStorage.getItem('doctorId'); // Replace with actual doctor user ID source
+    if (doctorUserId) {
+      socketRef.current.emit('user-connected', doctorUserId);
+    }
 
     return () => {
       socketRef.current.disconnect();
@@ -128,7 +186,7 @@ const Messages = () => {
         <Doctornavbar />
         <div className="flex-1 flex">
           {/* Patients List */}
-          <div className="w-1/3 border-r border-gray-200 bg-white">
+          <div className="w-2/5 border-r border-gray-200 bg-white">
             <div className="p-4 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-800">Messages</h2>
               <p className="text-sm text-gray-500">Communicate with your patients</p>
@@ -145,7 +203,7 @@ const Messages = () => {
                 />
               </div>
             </div>
-            <div className="overflow-y-auto h-[calc(100vh-200px)]">
+            <div className="flex-1 overflow-y-auto">
               {filteredPatients.map((patient) => (
                 <div
                   key={patient._id}
@@ -156,7 +214,10 @@ const Messages = () => {
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-medium">{patient.name}</p>
+                      <p className="font-medium">{patient.name}
+                        {/* Online status indicator */}
+                        <span className={`ml-2 w-2 h-2 rounded-full inline-block ${patient.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                      </p>
                       <p className="text-sm text-gray-500">{patient.email}</p>
                       {patient.lastAppointment && (
                         <p className="text-xs text-gray-400">
@@ -178,31 +239,29 @@ const Messages = () => {
           </div>
 
           {/* Chat area */}
-          <div className="flex-1 flex flex-col">
+          <div className="w-3/5 flex flex-col">
             {selectedPatient ? (
               <>
                 <div className="p-4 border-b bg-white">
                   <h3 className="text-lg font-semibold">{selectedPatient.name}</h3>
                   <p className="text-sm text-gray-500">{selectedPatient.email}</p>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto p-4 space-y-1">
                   {messages.length > 0 ? (
                     messages.map((message) => (
                       <div
                         key={message._id || message.timestamp}
-                        className={`flex ${
-                          message.senderType === 'doctor' ? 'justify-end' : 'justify-start'
-                        }`}
+                        className={`flex ${message.senderType === 'doctor' ? 'justify-end' : 'justify-start'} mb-1`}
                       >
                         <div
-                          className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                          className={`max-w-[70%] rounded-lg px-2 py-1 ${
                             message.senderType === 'doctor'
                               ? 'bg-blue-500 text-white'
-                              : 'bg-gray-100'
+                              : 'bg-gray-100 border border-gray-300'
                           }`}
                         >
-                          <p>{message.content}</p>
-                          <p className="text-xs mt-1 opacity-70">
+                          <p className="text-xs">{message.content}</p>
+                          <p className="text-xs mt-0.5 opacity-70">
                             {new Date(message.timestamp || message.createdAt).toLocaleTimeString()}
                           </p>
                         </div>

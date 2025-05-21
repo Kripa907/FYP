@@ -3,6 +3,7 @@ import { io } from 'socket.io-client';
 import { FiSearch, FiChevronLeft, FiMoreVertical, FiSend } from 'react-icons/fi';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const Messages = () => {
     const [activeConversation, setActiveConversation] = useState(null);
@@ -25,7 +26,7 @@ const Messages = () => {
             try {
                 const response = await axios.get('http://localhost:4001/api/messages/user/chat-list', {
                     headers: {
-                        'token': token
+                        'Authorization': `Bearer ${token}`
                     }
                 });
                 if (response.data.success) {
@@ -45,7 +46,11 @@ const Messages = () => {
         socketRef.current = io('http://localhost:4001');
         
         if (activeConversation) {
-            const roomId = `chat-${activeConversation._id}-${localStorage.getItem('userId')}`;
+            // Construct roomId consistently by sorting participant IDs
+            const userId = localStorage.getItem('userId');
+            const doctorId = activeConversation._id;
+            const sortedIds = [userId, doctorId].sort();
+            const roomId = `chat-${sortedIds[0]}-${sortedIds[1]}`;
             socketRef.current.emit('join-chat-room', { roomId });
         }
 
@@ -96,7 +101,7 @@ const Messages = () => {
         try {
             const response = await axios.get(`http://localhost:4001/api/messages/user/messages/${activeConversation._id}`, {
                 headers: {
-                    'token': token
+                    'Authorization': `Bearer ${token}`
                 }
             });
             if (response.data.success) {
@@ -117,7 +122,7 @@ const Messages = () => {
                     content: message.trim()
                 }, {
                     headers: {
-                        'token': token
+                        'Authorization': `Bearer ${token}`
                     }
                 });
 
@@ -131,6 +136,7 @@ const Messages = () => {
                     };
                     setMessages(prev => [...prev, newMessage]);
                     setMessage('');
+                    toast.success('Message sent successfully!');
                 } else {
                     console.error('Failed to send message:', response.data.message);
                     // If not authorized, redirect to login
@@ -188,16 +194,11 @@ const Messages = () => {
                                         alt={doctor.name}
                                         className="w-10 h-10 rounded-full object-cover"
                                     />
-                                    <div>
-                                        <h3 className="font-medium text-gray-800">{doctor.name}</h3>
-                                        <p className="text-xs text-gray-500">{doctor.speciality}</p>
+                                    <div className="flex flex-col flex-grow min-w-0">
+                                        <h3 className="font-medium text-gray-800 truncate">{doctor.name}</h3>
+                                        <p className="text-xs text-gray-500 truncate">{doctor.speciality}</p>
                                     </div>
                                 </div>
-                                {doctor.lastAppointment && (
-                                    <span className="text-xs text-gray-400">
-                                        Last visit: {new Date(doctor.lastAppointment).toLocaleDateString()}
-                                    </span>
-                                )}
                             </div>
                         </div>
                     ))}
@@ -238,12 +239,12 @@ const Messages = () => {
                         {messages.map((msg, index) => (
                             <div
                                 key={index}
-                                className={`mb-4 ${msg.senderType === "user" ? 'text-right' : 'text-left'}`}
+                                className={`mb-1 ${msg.senderType === "user" ? 'text-right' : 'text-left'}`}
                             >
                                 <div
-                                    className={`inline-block p-3 rounded-lg max-w-xs md:max-w-md ${msg.senderType === "user" ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'}`}
+                                    className={`inline-block rounded-lg max-w-xs md:max-w-md ${msg.senderType === "user" ? 'bg-blue-500 text-white border border-blue-700 p-0.5' : 'bg-white border border-gray-200 p-3'}`}
                                 >
-                                    <p>{msg.content}</p>
+                                    <p className="text-xs">{msg.content}</p>
                                     <p className={`text-xs mt-1 ${msg.senderType === "user" ? 'text-blue-100' : 'text-gray-400'}`}>
                                         {new Date(msg.timestamp).toLocaleTimeString()}
                                     </p>

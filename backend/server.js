@@ -36,6 +36,11 @@ const io = new Server(httpServer, {
   }
 })
 
+// Map to store online users: userId -> socketId
+const onlineUsers = {};
+
+io.onlineUsers = onlineUsers; // Attach onlineUsers to the io instance
+
 connectDB()
 // Cloudinary is now initialized in the config file
 
@@ -56,6 +61,14 @@ console.log('Is appointmentModel registered after imports?', mongoose.modelNames
 // Socket.IO connection handler
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
+
+  // When a user (patient or doctor) connects and provides their user ID
+  socket.on('user-connected', (userId) => {
+    onlineUsers[userId] = socket.id;
+    console.log(`User ${userId} connected with socket ID ${socket.id}`);
+    // Broadcast status change to all connected doctors
+    io.emit('user-status-change', { userId, isOnline: true });
+  });
 
   // Join chat room for a conversation (doctor-patient pair)
   socket.on('join-chat-room', ({ roomId }) => {
@@ -81,6 +94,14 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
+    // Find the user ID associated with this socket ID
+    const userId = Object.keys(onlineUsers).find(key => onlineUsers[key] === socket.id);
+    if (userId) {
+      delete onlineUsers[userId];
+      console.log(`User ${userId} disconnected`);
+      // Broadcast status change to all connected doctors
+      io.emit('user-status-change', { userId, isOnline: false });
+    }
   });
 });
 

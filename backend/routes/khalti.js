@@ -116,13 +116,21 @@ try {
 
 router.post("/verify", async (req, res) => {
   const { pidx } = req.body;
-  console.log("pidx", pidx)
-  if(!pidx){
-    res.redirect("/unsuccessfull/user")
-
-    return
+  
+  if (!pidx) {
+    console.error("No payment ID provided in request");
+    return res.status(400).json({
+      success: false,
+      message: { 
+        status: "Failed", 
+        message: "Payment ID is required" 
+      }
+    });
   }
+
   try {
+    console.log("Verifying payment with ID:", pidx);
+    
     const response = await fetch(
       "https://a.khalti.com/api/v2/epayment/lookup/",
       {
@@ -131,18 +139,59 @@ router.post("/verify", async (req, res) => {
           Authorization: `Key ${process.env.KHALTI_SECRET_KEY}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ pidx: pidx }),
+        body: JSON.stringify({ pidx }),
       }
     );
 
-    const data = await response.json();
-    console.log("Payment verification response:", data);
-    return res.status(200).json({
-      message: data,
+    if (!response.ok) {
+      console.error("Khalti API error:", response.status);
+      throw new Error(`Khalti API error: ${response.status}`);
+    }
 
+    const data = await response.json();
+    console.log("Raw Khalti response:", data);
+
+    // Normalize the payment status
+    let paymentStatus = data.status?.toLowerCase() || data.payment_status?.toLowerCase();
+    
+    if (!paymentStatus) {
+      console.error("No payment status in response:", data);
+      throw new Error("Invalid payment status received from Khalti");
+    }
+
+    // Map Khalti status to our status
+    const statusMap = {
+      'completed': 'Completed',
+      'pending': 'Pending',
+      'failed': 'Failed',
+      'refunded': 'Refunded'
+    };
+
+    const normalizedStatus = statusMap[paymentStatus] || paymentStatus;
+
+    // Update the response with normalized status
+    const responseData = {
+      ...data,
+      status: normalizedStatus,
+      payment_status: normalizedStatus
+    };
+
+    console.log("Normalized payment status:", normalizedStatus);
+
+    return res.status(200).json({
+      success: true,
+      message: responseData
     });
   } catch (error) {
-    console.error("Error checking payment status:", error);
+    console.error("Error verifying payment:", error);
+    return res.status(500).json({
+      success: false,
+      message: { 
+        status: "Failed", 
+        message: "Error verifying payment status",
+        error: error.message
+      }
+    });
   }
 });
 
