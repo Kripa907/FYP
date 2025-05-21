@@ -246,6 +246,17 @@ const bookAppointment = async (req, res) => {
       link: `/appointments/${appointment._id}` // Add link to the appointment
     });
 
+    // Create notification for admin
+    await Notification.create({
+      recipientType: 'admin',
+      recipient: 'admin', // Assuming a fixed recipient identifier for admin
+      type: 'appointment',
+      content: `New appointment booked by ${user.name} with Dr. ${doctor.name} for ${slotDate} at ${slotTime}`,
+      sender: userId,
+      senderType: 'user',
+      link: `/admin/appointments/${appointment._id}` // Link to admin appointment view
+    });
+
     res.status(201).json({
       success: true,
       message: 'Appointment booked successfully',
@@ -273,33 +284,46 @@ const cancelAppointment = async (req, res) => {
             return res.json({ success: false, message: 'Unauthorized action' });
         }
 
-        await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true });
+        await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true, status: 'Cancelled' }); // Update status to Cancelled
 
-        const { docId, slotDate, slotTime } = appointmentData;
+        const { doctor: docId, slotDate, slotTime } = appointmentData; // Use object destructuring and correct field name
         const doctorData = await doctorModel.findById(docId);
         const userData = await userModel.findById(userId);
 
-        let slots_booked = doctorData.slots_booked;
-        slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime);
-
-        await doctorModel.findByIdAndUpdate(docId, { slots_booked });
+        // Remove slot from doctor's booked slots (if applicable)
+        if (doctorData.slots_booked?.[slotDate]) {
+            doctorData.slots_booked[slotDate] = doctorData.slots_booked[slotDate].filter(e => e !== slotTime);
+            await doctorData.save();
+        }
 
         // --- Notification logic ---
         const Notification = (await import('../models/notificationModel.js')).default;
+        
         // Notify doctor
         await Notification.create({
           recipientType: 'doctor',
-          recipientId: docId,
+          recipient: docId,
           type: 'appointment_cancel',
-          message: `Appointment canceled by ${userData?.name || 'user'} for ${slotDate} at ${slotTime}`,
-          relatedAppointment: appointmentId
+          content: `Appointment canceled by ${userData?.name || 'user'} for ${slotDate} at ${slotTime}`,
+          link: `/doctor/appointments/${appointmentId}`
+        });
+
+        // Notify admin
+        await Notification.create({
+          recipientType: 'admin',
+          recipient: 'admin', // Assuming a fixed recipient identifier for admin
+          type: 'appointment_cancel',
+          content: `Appointment cancelled by ${userData?.name || 'user'} for Dr. ${doctorData?.name || ''} on ${slotDate} at ${slotTime}`,
+          sender: userId,
+          senderType: 'user',
+          link: `/admin/appointments/${appointmentId}`
         });
         // --- End notification logic ---
 
         res.json({ success: true, message: 'Appointment Cancelled' });
     } catch (error) {
         console.log(error);
-        res.json({ success: false, message: error.message });
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 

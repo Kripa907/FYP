@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom'
 import { FiBell, FiCheck, FiTrash2, FiUser } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { NotificationContext } from '../context/NotificationContext';
-import { Settings } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -22,7 +21,6 @@ const Navbar = () => {
     const { notifications, unreadCount, fetchNotifications, markAsRead, markAllAsRead, deleteNotification } = useContext(NotificationContext);
     const [showNotifications, setShowNotifications] = useState(false);
     const [adminNotifs, setAdminNotifs] = useState([]);
-    const [showSettings, setShowSettings] = useState(false);
     const navigate = useNavigate();
 
     const logout = () => {
@@ -55,7 +53,7 @@ const Navbar = () => {
 
     return (
         <>
-            <div className="flex justify-between items-center px-6 sm:px-10 py-4 border-b bg-white">
+            <div className="flex justify-between items-center px-6 sm:px-10 py-6 border-b bg-white">
                 <div>
                     <h1 className="text-lg font-bold text-gray-800">Admin Dashboard</h1>
                     <p className="text-xs text-gray-500">Welcome back, Admin</p>
@@ -131,7 +129,8 @@ const Navbar = () => {
                     </div>
 
                     {/* Settings and Profile */}
-                    <Dialog open={showSettings} onOpenChange={setShowSettings}>
+                    {/* Removed Settings Dialog */}
+                    {/* <Dialog open={showSettings} onOpenChange={setShowSettings}>
                         <DialogTrigger asChild>
                             <button className="p-2 rounded-full hover:bg-gray-100">
                                 <Settings className="h-5 w-5 text-gray-600" />
@@ -149,7 +148,7 @@ const Navbar = () => {
                                 <ChangePassword />
                             </div>
                         </DialogContent>
-                    </Dialog>
+                    </Dialog> */}
 
                     <div className="flex items-center gap-2 text-xs">
                         <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center">

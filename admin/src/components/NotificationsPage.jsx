@@ -1,70 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Bell, Check, X, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
+import { NotificationContext } from '../context/NotificationContext';
 
 const NotificationsPage = () => {
-    const [notifications, setNotifications] = useState([
-        {
-            id: 1,
-            title: "New Appointment",
-            message: "Dr. Emily Brown has a new appointment",
-            time: "10 minutes ago",
-            read: false,
-            type: "appointment"
-        },
-        {
-            id: 2,
-            title: "Doctor Application",
-            message: "New doctor application received from Dr. Michael Clark",
-            time: "1 hour ago",
-            read: false,
-            type: "application"
-        },
-        {
-            id: 3,
-            title: "System Update",
-            message: "System maintenance scheduled for tonight",
-            time: "2 hours ago",
-            read: true,
-            type: "system"
-        },
-        {
-            id: 4,
-            title: "New Patient Registration",
-            message: "New patient registered: John Doe",
-            time: "3 hours ago",
-            read: true,
-            type: "patient"
-        }
-    ]);
+    console.log('NotificationsPage component rendering');
+    const { notifications, unreadCount, fetchNotifications, markAsRead, markAllAsRead, deleteNotification } = useContext(NotificationContext);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filter, setFilter] = useState('all');
 
-    const markAsRead = (id) => {
-        setNotifications(notifications.map(notif => 
-            notif.id === id ? { ...notif, read: true } : notif
-        ));
-        toast.success("Notification marked as read");
-    };
+    useEffect(() => {
+        fetchNotifications();
+    }, [fetchNotifications]);
 
-    const markAllAsRead = () => {
-        setNotifications(notifications.map(notif => ({ ...notif, read: true })));
-        toast.success("All notifications marked as read");
-    };
-
-    const deleteNotification = (id) => {
-        setNotifications(notifications.filter(notif => notif.id !== id));
-        toast.success("Notification removed");
-    };
-
-    const filteredNotifications = notifications.filter(notif => {
-        const matchesSearch = notif.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            notif.message.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesFilter = filter === 'all' || notif.type === filter;
-        return matchesSearch && matchesFilter;
-    });
+    // Temporarily disable filtering to check if notifications are received
+    // const filteredNotifications = notifications.filter(notif => {
+    //     const matchesSearch = notif.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    //                         notif.message?.toLowerCase().includes(searchQuery.toLowerCase());
+    //     const matchesFilter = filter === 'all' || (notif.type && notif.type.toLowerCase() === filter.toLowerCase());
+    //     return matchesSearch && matchesFilter;
+    // });
+    const filteredNotifications = notifications; // Use all notifications from context
 
     return (
         <div className="p-6 space-y-6">
@@ -101,45 +59,48 @@ const NotificationsPage = () => {
 
             <div className="space-y-4">
                 {filteredNotifications.length > 0 ? (
-                    filteredNotifications.map((notification) => (
-                        <div
-                            key={notification.id}
-                            className={`p-4 border rounded-lg ${!notification.read ? 'bg-blue-50' : ''}`}
-                        >
-                            <div className="flex justify-between items-start">
-                                <div className="flex items-start gap-3">
-                                    <div className="p-2 bg-blue-100 rounded-full">
-                                        <Bell className="h-5 w-5 text-blue-600" />
+                    filteredNotifications.map((notification) => {
+                        console.log('Rendering notification:', notification); // Log each notification object
+                        return (
+                            <div
+                                key={notification._id} // Use _id as the key
+                                className={`p-4 border rounded-lg ${!notification.read ? 'bg-blue-50' : ''}`}
+                            >
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 bg-blue-100 rounded-full">
+                                            <Bell className="h-5 w-5 text-blue-600" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-medium">{notification.title || 'No Title'}</h3> {/* Add fallback */}
+                                            <p className="text-sm text-gray-600 mt-1">{notification.message || 'No message'}</p> {/* Add fallback */}
+                                            <span className="text-xs text-gray-500 mt-1 block">{notification.time ? new Date(notification.time).toLocaleString() : 'Invalid Date'}</span> {/* Add check and fallback */}
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="font-medium">{notification.title}</h3>
-                                        <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-                                        <span className="text-xs text-gray-500 mt-1 block">{notification.time}</span>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    {!notification.read && (
+                                    <div className="flex items-center gap-2">
+                                        {!notification.read && (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => markAsRead(notification.id || notification._id)}
+                                                className="text-blue-600 hover:text-blue-800"
+                                            >
+                                                <Check className="h-4 w-4" />
+                                            </Button>
+                                        )}
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => markAsRead(notification.id)}
-                                            className="text-blue-600 hover:text-blue-800"
+                                            onClick={() => deleteNotification(notification.id || notification._id)}
+                                            className="text-gray-400 hover:text-red-600"
                                         >
-                                            <Check className="h-4 w-4" />
+                                            <X className="h-4 w-4" />
                                         </Button>
-                                    )}
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => deleteNotification(notification.id)}
-                                        className="text-gray-400 hover:text-red-600"
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))
+                        );
+                    })
                 ) : (
                     <div className="text-center py-8">
                         <p className="text-gray-500">No notifications found</p>
