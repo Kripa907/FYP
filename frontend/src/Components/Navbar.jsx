@@ -56,8 +56,8 @@ const Navbar = () => {
                             <div className='flex items-center gap-2 cursor-pointer group relative' onClick={() => setShowMenu(!showMenu)}>
                                 <img className='w-5 rounded-full' src={assets.user} alt="user" />
                                 <img className='w-7' src={assets.dropdown} alt="dropdown" />
-                                <div className='absolute top-0 right-0 pt-14 text-base font-medium text-gray-600 hidden group-hover:block w-auto'>
-                                    <div className='min-w-48 bg-stone-100 rounded flex flex-col gap-4 p-4'>
+                                <div className='absolute top-0 right-0 pt-14 text-base font-medium text-gray-600 hidden group-hover:block w-auto z-50'>
+                                    <div className='min-w-48 bg-stone-100 rounded flex flex-col gap-4 p-4 shadow-lg'>
                                         <p onClick={() => navigate('my-profile')} className='hover:text-black cursor-pointer'>My Profile</p>
                                         <p onClick={handleLogout} className='hover:text-black cursor-pointer'>Logout</p>
                                     </div>

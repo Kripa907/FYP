@@ -30,7 +30,7 @@ import mongoose from 'mongoose';
 const feedbackSchema = new mongoose.Schema({
   doctor: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'doctor', // changed from 'Doctor' to 'doctor' to match model registration
+    ref: 'doctor',
     required: true
   },
   user: {

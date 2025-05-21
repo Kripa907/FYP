@@ -97,4 +97,4 @@ const AppContextProvider = (props) => {
     )
 }
 
-export default AppContextProvidergit
+export default AppContextProvider;
